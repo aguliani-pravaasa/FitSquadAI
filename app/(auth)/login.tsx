@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { Link } from 'expo-router'
+import { Link, useRouter } from 'expo-router'
 import { useState } from 'react'
 import {
     ActivityIndicator,
@@ -14,6 +14,7 @@ import {
 } from 'react-native'
 
 export default function Login() {
+    const router = useRouter()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
@@ -26,6 +27,8 @@ export default function Login() {
         })
         if (error) {
             Alert.alert('Sign In Error', error.message)
+        } else {
+            router.replace('/(tabs)')
         }
         setLoading(false)
     }
@@ -38,8 +41,7 @@ export default function Login() {
             <View style={styles.inner}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.title}>Welcome back 👋</Text>
-                    <Text style={styles.subtitle}>Sign in to your FitSquad account</Text>
+                    <Text style={styles.title}>Welcome back</Text>
                 </View>
 
                 {/* Form */}

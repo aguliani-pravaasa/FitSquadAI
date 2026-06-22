@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { Link } from 'expo-router'
+import { Link, useRouter } from 'expo-router'
 import { useState } from 'react'
 import {
     ActivityIndicator,
@@ -14,6 +14,7 @@ import {
 } from 'react-native'
 
 export default function Register() {
+    const router = useRouter()
     const [name, setName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -32,6 +33,8 @@ export default function Register() {
         })
         if (error) {
             Alert.alert('Sign Up Error', error.message)
+        } else {
+            router.replace('/(tabs)')
         }
         setLoading(false)
     }
@@ -44,8 +47,7 @@ export default function Register() {
             <View style={styles.inner}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.title}>Create account 🏋️</Text>
-                    <Text style={styles.subtitle}>Join FitSquad and start your journey</Text>
+                    <Text style={styles.title}>Create account</Text>
                 </View>
 
                 {/* Form */}
