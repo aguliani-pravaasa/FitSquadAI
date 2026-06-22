@@ -44,7 +44,7 @@ export default function HomeScreen() {
           </ThemedText>
         </Link>
       </ThemedView>
-      
+
       <ThemedView style={styles.stepContainer}>
         <Link href="/modal">
           <Link.Trigger>
