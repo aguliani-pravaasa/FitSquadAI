@@ -1,9 +1,11 @@
+import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
 export default function HomeScreen() {
   const router = useRouter()
+  const { profile } = useAuthContext()
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -25,6 +27,11 @@ export default function HomeScreen() {
         >
           <Text style={styles.buttonText}>Sign Out</Text>
         </Pressable>
+
+        <View style={styles.profileBox}>
+          <Text style={styles.profileLabel}>Profile Name</Text>
+          <Text style={styles.profileName}>{profile?.display_name || 'Unknown'}</Text>
+        </View>
       </View>
     </View>
   )
@@ -94,5 +101,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     letterSpacing: 0.2,
+  },
+  profileBox: {
+    backgroundColor: '#252a32',
+    borderWidth: 1,
+    borderColor: '#3a3f47',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    width: '100%',
+    marginTop: 8,
+  },
+  profileLabel: {
+    fontSize: 12,
+    color: '#9BA1A6',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  profileName: {
+    fontSize: 14,
+    color: '#ECEDEE',
+    fontWeight: '500',
   },
 })
