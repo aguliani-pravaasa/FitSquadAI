@@ -13,19 +13,25 @@ import {
     View,
 } from 'react-native'
 
-export default function Login() {
+export default function Register() {
+    const [name, setName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)
 
-    async function signInWithEmail() {
+    async function signUpWithEmail() {
         setLoading(true)
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signUp({
             email,
             password,
+            options: {
+                data: {
+                    full_name: name,
+                },
+            },
         })
         if (error) {
-            Alert.alert('Sign In Error', error.message)
+            Alert.alert('Sign Up Error', error.message)
         }
         setLoading(false)
     }
@@ -38,12 +44,26 @@ export default function Login() {
             <View style={styles.inner}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.title}>Welcome back 👋</Text>
-                    <Text style={styles.subtitle}>Sign in to your FitSquad account</Text>
+                    <Text style={styles.title}>Create account 🏋️</Text>
+                    <Text style={styles.subtitle}>Join FitSquad and start your journey</Text>
                 </View>
 
                 {/* Form */}
                 <View style={styles.form}>
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Full Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Jane Doe"
+                            placeholderTextColor="#687076"
+                            value={name}
+                            onChangeText={setName}
+                            autoCapitalize="words"
+                            autoComplete="name"
+                            editable={!loading}
+                        />
+                    </View>
+
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Email</Text>
                         <TextInput
@@ -63,12 +83,12 @@ export default function Login() {
                         <Text style={styles.label}>Password</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Enter your password"
+                            placeholder="Create a strong password"
                             placeholderTextColor="#687076"
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry
-                            autoComplete="password"
+                            autoComplete="new-password"
                             editable={!loading}
                         />
                     </View>
@@ -79,22 +99,22 @@ export default function Login() {
                             pressed && styles.buttonPressed,
                             loading && styles.buttonDisabled,
                         ]}
-                        onPress={signInWithEmail}
+                        onPress={signUpWithEmail}
                         disabled={loading}
                     >
                         {loading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.buttonText}>Sign In</Text>
+                            <Text style={styles.buttonText}>Create Account</Text>
                         )}
                     </Pressable>
                 </View>
 
                 {/* Footer */}
                 <View style={styles.footer}>
-                    <Text style={styles.footerText}>Don't have an account? </Text>
-                    <Link href="/(auth)/register" style={styles.footerLink}>
-                        Register
+                    <Text style={styles.footerText}>Already have an account? </Text>
+                    <Link href="/(auth)/login" style={styles.footerLink}>
+                        Sign In
                     </Link>
                 </View>
             </View>

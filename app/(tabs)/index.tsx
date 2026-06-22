@@ -37,6 +37,15 @@ export default function HomeScreen() {
         </ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
+        <ThemedText type="subtitle">Authentication</ThemedText>
+        <Link href="/(auth)/login" asChild>
+          <ThemedText style={{ color: '#0a7ea4', marginTop: 8, fontWeight: '600' }}>
+            Go to Login Page
+          </ThemedText>
+        </Link>
+      </ThemedView>
+      
+      <ThemedView style={styles.stepContainer}>
         <Link href="/modal">
           <Link.Trigger>
             <ThemedText type="subtitle">Step 2: Explore</ThemedText>

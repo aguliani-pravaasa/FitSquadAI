@@ -19,7 +19,7 @@ const ExpoWebSecureStoreAdapter = {
 }
 export const supabase = createClient(
     process.env.EXPO_PUBLIC_SUPABASE_URL ?? '',
-    process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '',
+    process.env.EXPO_PUBLIC_SUPABASE_KEY ?? process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '',
     {
         auth: {
             storage: ExpoWebSecureStoreAdapter,
