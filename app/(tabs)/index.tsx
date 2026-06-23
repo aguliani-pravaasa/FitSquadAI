@@ -15,7 +15,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.emoji}>🎉</Text>
+        
         <Text style={styles.title}>You are logged in!</Text>
 
         <Pressable
