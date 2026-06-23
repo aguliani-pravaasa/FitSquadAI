@@ -27,11 +27,6 @@ export default function HomeScreen() {
         >
           <Text style={styles.buttonText}>Sign Out</Text>
         </Pressable>
-
-        <View style={styles.profileBox}>
-          <Text style={styles.profileLabel}>Profile Name</Text>
-          <Text style={styles.profileName}>{profile?.display_name || 'Unknown'}</Text>
-        </View>
       </View>
     </View>
   )
