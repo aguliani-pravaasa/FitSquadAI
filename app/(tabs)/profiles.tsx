@@ -16,15 +16,24 @@ import {
 } from 'react-native'
 
 type ProfileFormState = {
+  age: string
   height: string
   weight: string
   gender: string
+}
+
+function calculateFitnessLevel(age: number, heightCm: number, weightKg: number, gender: string) {
+  const isWoman = /woman|female|girl/i.test(gender.trim())
+  const bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * age) + (isWoman ? -161 : 5)
+
+  return Math.round(bmr)
 }
 
 export default function ProfilesScreen() {
   const { claims, email, isLoading, isLoggedIn, profile } = useAuthContext()
   const [isSaving, setIsSaving] = useState(false)
   const [form, setForm] = useState<ProfileFormState>({
+    age: '',
     height: '',
     weight: '',
     gender: '',
@@ -32,6 +41,7 @@ export default function ProfilesScreen() {
 
   useEffect(() => {
     setForm({
+      age: profile?.age?.toString() ?? '',
       height: profile?.height_cm?.toString() ?? '',
       weight: profile?.weight_kg?.toString() ?? '',
       gender: profile?.gender?.toString() ?? '',
@@ -52,9 +62,15 @@ export default function ProfilesScreen() {
       return
     }
 
+    const ageValue = form.age.trim() ? Number.parseInt(form.age.trim(), 10) : null
     const heightValue = form.height.trim() ? Number.parseInt(form.height.trim(), 10) : null
     const weightValue = form.weight.trim() ? Number.parseFloat(form.weight.trim()) : null
     const genderValue = form.gender.trim() || null
+
+    if (form.age.trim() && Number.isNaN(ageValue)) {
+      Alert.alert('Invalid age', 'Please enter a valid age in years.')
+      return
+    }
 
     if (form.height.trim() && Number.isNaN(heightValue)) {
       Alert.alert('Invalid height', 'Please enter a valid height in centimeters.')
@@ -66,15 +82,24 @@ export default function ProfilesScreen() {
       return
     }
 
+    if (ageValue === null || heightValue === null || weightValue === null || !genderValue) {
+      Alert.alert('Missing information', 'Please enter age, height, weight, and gender to calculate fitness level.')
+      return
+    }
+
+    const fitnessLevel = calculateFitnessLevel(ageValue, heightValue, weightValue, genderValue)
+
     setIsSaving(true)
     const { error } = await supabase
       .from('profiles')
       .upsert(
         {
           id: claims.sub,
+          age: ageValue,
           height_cm: heightValue,
           weight_kg: weightValue,
           gender: genderValue,
+          fitness_level: fitnessLevel,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'id' }
@@ -87,7 +112,7 @@ export default function ProfilesScreen() {
       return
     }
 
-    Alert.alert('Profile saved', 'Your height, weight, and gender were updated.')
+    Alert.alert('Profile saved', 'Your age, height, weight, gender, and fitness level were updated.')
   }
 
   return (
@@ -123,6 +148,17 @@ export default function ProfilesScreen() {
 
         <View style={styles.card}>
           <Text style={styles.sectionLabel}>Body Details</Text>
+
+          <Text style={styles.label}>Age</Text>
+          <TextInput
+            style={styles.input}
+            value={form.age}
+            onChangeText={(text) => setForm((current) => ({ ...current, age: text }))}
+            placeholder="28"
+            placeholderTextColor="#687076"
+            keyboardType="number-pad"
+            editable={!isSaving}
+          />
 
           <Text style={styles.label}>Height (cm)</Text>
           <TextInput

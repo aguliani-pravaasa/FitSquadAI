@@ -1,11 +1,9 @@
-import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'expo-router'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
 export default function HomeScreen() {
   const router = useRouter()
-  const { profile } = useAuthContext()
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
