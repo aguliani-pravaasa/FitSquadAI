@@ -5,6 +5,7 @@ import { PropsWithChildren, useEffect, useState } from 'react'
 export default function AuthProvider({ children }: PropsWithChildren) {
     const [claims, setClaims] = useState<Record<string, any> | undefined | null>()
     const [profile, setProfile] = useState<any>()
+    const [email, setEmail] = useState<string | null>()
     const [isLoading, setIsLoading] = useState<boolean>(true)
 
     // Fetch the claims once, and subscribe to auth state changes
@@ -12,13 +13,17 @@ export default function AuthProvider({ children }: PropsWithChildren) {
         const fetchClaims = async () => {
             setIsLoading(true)
 
-            const { data, error } = await supabase.auth.getClaims()
+            const [{ data, error }, userResult] = await Promise.all([
+                supabase.auth.getClaims(),
+                supabase.auth.getUser(),
+            ])
 
             if (error) {
                 console.error('Error fetching claims:', error)
             }
 
             setClaims(data?.claims ?? null)
+            setEmail(userResult.data.user?.email ?? data?.claims?.email ?? null)
             setIsLoading(false)
         }
 
@@ -28,8 +33,12 @@ export default function AuthProvider({ children }: PropsWithChildren) {
             data: { subscription },
         } = supabase.auth.onAuthStateChange(async (_event, _session) => {
             console.log('Auth state changed:', { event: _event })
-            const { data } = await supabase.auth.getClaims()
+            const [{ data }, userResult] = await Promise.all([
+                supabase.auth.getClaims(),
+                supabase.auth.getUser(),
+            ])
             setClaims(data?.claims ?? null)
+            setEmail(userResult.data.user?.email ?? data?.claims?.email ?? null)
         })
 
         // Cleanup subscription on unmount
@@ -61,6 +70,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
         <AuthContext.Provider
             value={{
                 claims,
+                email,
                 isLoading,
                 profile,
                 isLoggedIn: !!claims,
