@@ -12,10 +12,6 @@ export default function ModalScreen() {
         <ThemedText type="link">Go to login to continue
         </ThemedText>
       </Link>
-      <Link href="/(auth)/register" dismissTo style={styles.link}>
-        <ThemedText type="link">Or create a new account
-        </ThemedText>
-      </Link>
     </ThemedView>
   );
 }
