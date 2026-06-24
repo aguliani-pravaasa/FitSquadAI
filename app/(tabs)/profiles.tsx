@@ -3,16 +3,16 @@ import { supabase } from '@/lib/supabase'
 import { Redirect } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native'
 
 type ProfileFormState = {
@@ -24,7 +24,7 @@ type ProfileFormState = {
 
 function calculateFitnessLevel(age: number, heightCm: number, weightKg: number, gender: string) {
   const isWoman = /woman|female|girl/i.test(gender.trim())
-  const bmr = (10 * weightKg) + (6.25 * heightCm) - (5 * age) + (isWoman ? -161 : 5)
+  const bmr = (weightKg)/((heightCm/100)^2)
 
   return Math.round(bmr)
 }
