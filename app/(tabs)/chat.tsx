@@ -173,6 +173,7 @@ export default function ChatScreen() {
 					squad_id: currentSquad.id,
 					user_id: claims.sub,
 					message: trimmedMessage,
+                    type: 'user'
 				})
 				.select('id, squad_id, user_id, message, created_at, profiles(full_name, username)')
 				.single()
@@ -187,7 +188,7 @@ export default function ChatScreen() {
 				setMessages((current) => mergeMessages(current, [data as ChatMessage]))
 			}
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Unable to send message.'
+			const message = error?.message || 'Unable to send message.'
 			setLoadError(message)
 			Alert.alert('Could not send message', message)
 		} finally {
