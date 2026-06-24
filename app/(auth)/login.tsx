@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { Link, useRouter } from 'expo-router'
+import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import {
     ActivityIndicator,
@@ -10,27 +10,52 @@ import {
     StyleSheet,
     Text,
     TextInput,
-    View,
+    TouchableOpacity,
+    View
 } from 'react-native'
 
 export default function Login() {
     const router = useRouter()
-    const [email, setEmail] = useState('')
+    const [isLogin,setIslogin] = useState(true);
+    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('')
-    const [loading, setLoading] = useState(false)
+    const [loading, setLoading] = useState(false);
 
-    async function signInWithEmail() {
+    async function handleAuth() {
         setLoading(true)
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        })
-        if (error) {
-            Alert.alert('Sign In Error', error.message)
-        } else {
-            router.replace('/(tabs)')
+        try {
+            if (isLogin) {
+                const { error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                })
+
+                if (error) {
+                    Alert.alert('Sign In Error', error.message)
+                } else {
+                    router.replace('/(tabs)')
+                }
+            } else {
+                const { error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            full_name: username,
+                        },
+                    },
+                })
+
+                if (error) {
+                    Alert.alert('Sign Up Error', error.message)
+                } else {
+                    router.replace('/(tabs)')
+                }
+            }
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     return (
@@ -41,11 +66,24 @@ export default function Login() {
             <View style={styles.inner}>
                 {/* Header */}
                 <View style={styles.header}>
-                    <Text style={styles.title}>Welcome back</Text>
+                    <Text style={styles.title}>{isLogin ? 'Welcome back' : 'Create an account'}</Text>
                 </View>
 
                 {/* Form */}
                 <View style={styles.form}>
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>Display Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Your full name"
+                            placeholderTextColor="#687076"
+                            value={username}
+                            onChangeText={setUsername}
+                            autoCapitalize="none"
+                            autoComplete="name"
+                            editable={!loading}
+                        />
+                    </View>
                     <View style={styles.inputGroup}>
                         <Text style={styles.label}>Email</Text>
                         <TextInput
@@ -81,29 +119,30 @@ export default function Login() {
                             pressed && styles.buttonPressed,
                             loading && styles.buttonDisabled,
                         ]}
-                        onPress={signInWithEmail}
+                        onPress={handleAuth}
                         disabled={loading}
                     >
                         {loading ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <Text style={styles.buttonText}>Sign In</Text>
+                            <Text style={styles.buttonText}>
+                                {isLogin ? 'Sign In' : 'Sign Up'}
+                            </Text>
                         )}
                     </Pressable>
                 </View>
 
                 {/* Footer */}
-                <View style={styles.footer}>
-                    <Text style={styles.footerText}>Don&apos;t have an account? </Text>
-                    <Link href="/(auth)/register" style={styles.footerLink}>
-                        Register
-                    </Link>
-                </View>
+                <TouchableOpacity style={styles.footer} onPress={() => setIslogin(!isLogin)}>
+                    <Text style={styles.footerText}>
+                        {isLogin ? "Don't have an account? " : 'Already have an account? '}
+                    </Text>
+                    <Text style={styles.footerLink}>{isLogin ? 'Sign Up' : 'Sign In'}</Text>
+                </TouchableOpacity>
             </View>
         </KeyboardAvoidingView>
     )
 }
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,

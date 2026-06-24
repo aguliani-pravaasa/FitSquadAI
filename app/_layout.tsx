@@ -1,4 +1,3 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -6,24 +5,19 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useAuthContext } from '@/hooks/use-auth-context';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import AuthProvider from '@/providers/auth-provider';
 
 SplashScreen.preventAutoHideAsync();
 
 export const unstable_settings = {
-  anchor: '(auth)',
+  anchor: '(tabs)',
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <AuthProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <RootNavigator />
-        <StatusBar style="auto" />
-      </ThemeProvider>
+      <RootNavigator />
+      <StatusBar style="auto" />
     </AuthProvider>
   );
 }
