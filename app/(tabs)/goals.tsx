@@ -3,16 +3,16 @@ import { supabase } from '@/lib/supabase'
 import { Redirect } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
-    ActivityIndicator,
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native'
 
 type SquadSummary = {
@@ -21,6 +21,7 @@ type SquadSummary = {
 }
 
 type GoalSummary = {
+  id: string
   type: string
   baseline_points: number | null
 }
@@ -85,7 +86,7 @@ export default function GoalsScreen() {
 
       const { data } = await supabase
         .from('goals')
-        .select('type, baseline_points')
+        .select('id, type, baseline_points')
         .eq('squad_id', currentSquad.id)
 
       setCurrentGoal(data?.[0] ?? null)
@@ -130,11 +131,15 @@ export default function GoalsScreen() {
     }
 
     setIsSaving(true)
-    const { error } = await supabase.from('goals').insert({
-      squad_id: currentSquad.id,
-      type: trimmedGoal,
-      baseline_points: parsedPoints,
-    })
+    const { data: insertedGoal, error } = await supabase
+      .from('goals')
+      .insert({
+        squad_id: currentSquad.id,
+        type: trimmedGoal,
+        baseline_points: parsedPoints,
+      })
+      .select('id, type, baseline_points')
+      .single()
     setIsSaving(false)
 
     if (error) {
@@ -142,10 +147,27 @@ export default function GoalsScreen() {
       return
     }
 
-    setCurrentGoal({ type: trimmedGoal, baseline_points: parsedPoints })
+    setCurrentGoal({ id: insertedGoal.id, type: insertedGoal.type, baseline_points: insertedGoal.baseline_points })
     Alert.alert('Goal created', 'Your squad goal is now available on the dashboard.')
   }
+  type AcceptChallengeResult = {
+    scaled_text: string
+    scalable_quantity: string
+    user_baseline_points: number | null
+  }
 
+  export async function acceptChallenge(goalId: string): Promise<AcceptChallengeResult> {
+    const { data, error } = await supabase.functions.invoke('hyper-service', {
+      body: { goal_id: goalId }
+    })
+
+    if (error) {
+      const message = error.context?.error ?? error.message ?? 'Failed to accept challenge'
+      throw new Error(message)
+    }
+
+    return data as AcceptChallengeResult
+  }
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -223,6 +245,17 @@ export default function GoalsScreen() {
           ) : (
             <Text style={styles.helperText}>No squad goal has been created yet.</Text>
           )}
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              pressed && styles.buttonPressed,
+              isSaving && styles.buttonDisabled,
+            ]}
+            onPress={() => currentGoal && acceptChallenge(currentGoal.id)}
+            disabled={isSaving || !currentSquad?.id}
+          >
+            {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Accept Goal</Text>}
+          </Pressable>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

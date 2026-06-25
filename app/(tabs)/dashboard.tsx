@@ -118,7 +118,6 @@ export default function DashboardScreen() {
           <Text style={styles.squadText}>You are not currently joined to a squad.</Text>
         )}
       </View>
-
       <View style={styles.goalCard}>
         <Text style={styles.kicker}>Squad Goal</Text>
         {isLoadingGoal ? (
@@ -132,7 +131,22 @@ export default function DashboardScreen() {
           <Text style={styles.squadText}>No goal has been set for your squad yet.</Text>
         )}
       </View>
+      <View style={styles.goalCard}>
+        <Text style={styles.kicker}>User Goal</Text>
+        {isLoadingGoal ? (
+          <Text style={styles.squadText}>Loading goal...</Text>
+        ) : currentGoal ? (
+          <>
+            <Text style={styles.goalType}>{currentGoal.type}</Text>
+            <Text style={styles.squadText}>Baseline points: {currentGoal.baseline_points ?? 0}</Text>
+          </>
+        ) : (
+          <Text style={styles.squadText}>No goal has been set for your squad yet.</Text>
+        )}
+      </View>
     </View>
+    
+    
   )
 }
 

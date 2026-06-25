@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -24,6 +24,22 @@ export default function RootLayout() {
 
 function RootNavigator() {
   const { isLoading, isLoggedIn } = useAuthContext();
+  const segments = useSegments() as unknown as string[];
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+    const inTabsGroup = segments[0] === '(tabs)';
+    const isRootIndex = segments.length === 0 || (inTabsGroup && (segments[1] === 'index' || segments.length === 1));
+
+    if (!isLoggedIn && !inAuthGroup) {
+      router.replace('/(auth)/login');
+    } else if (isLoggedIn && (inAuthGroup || isRootIndex)) {
+      router.replace('/(tabs)/dashboard');
+    }
+  }, [isLoggedIn, segments, isLoading]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -37,11 +53,8 @@ function RootNavigator() {
 
   return (
     <Stack>
-      <Stack.Protected guard={isLoggedIn}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack.Protected>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
     </Stack>
   );
 }
