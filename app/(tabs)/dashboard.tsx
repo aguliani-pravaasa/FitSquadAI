@@ -11,16 +11,24 @@ type SquadSummary = {
 }
 
 type GoalSummary = {
+  id: string
   type: string
   baseline_points: number | null
+}
+
+type UserGoalSummary = {
+  text: string
+  user_baseline_points: number | null
 }
 
 export default function DashboardScreen() {
   const { claims, email, isLoading, isLoggedIn } = useAuthContext()
   const [currentSquad, setCurrentSquad] = useState<SquadSummary | null>(null)
   const [currentGoal, setCurrentGoal] = useState<GoalSummary | null>(null)
+  const [userGoal, setUserGoal] = useState<UserGoalSummary | null>(null)
   const [isLoadingSquad, setIsLoadingSquad] = useState(true)
   const [isLoadingGoal, setIsLoadingGoal] = useState(true)
+  const [isLoadingUserGoal, setIsLoadingUserGoal] = useState(true)
 
   useEffect(() => {
     const loadCurrentSquad = async () => {
@@ -78,7 +86,7 @@ export default function DashboardScreen() {
 
       const { data } = await supabase
         .from('goals')
-        .select('type, baseline_points')
+        .select('id, type, baseline_points')
         .eq('squad_id', currentSquad.id)
 
       setCurrentGoal(data?.[0] ?? null)
@@ -87,6 +95,30 @@ export default function DashboardScreen() {
 
     loadCurrentGoal()
   }, [currentSquad?.id])
+
+  useEffect(() => {
+    const loadUserGoal = async () => {
+      if (!claims?.sub || !currentGoal?.id) {
+        setUserGoal(null)
+        setIsLoadingUserGoal(false)
+        return
+      }
+
+      setIsLoadingUserGoal(true)
+
+      const { data } = await supabase
+        .from('user_goals')
+        .select('text, user_baseline_points')
+        .eq('user_id', claims.sub)
+        .eq('goal_id', currentGoal.id)
+        .maybeSingle()
+
+      setUserGoal(data ?? null)
+      setIsLoadingUserGoal(false)
+    }
+
+    loadUserGoal()
+  }, [claims?.sub, currentGoal?.id])
 
   if (isLoading) {
     return null
@@ -133,15 +165,15 @@ export default function DashboardScreen() {
       </View>
       <View style={styles.goalCard}>
         <Text style={styles.kicker}>User Goal</Text>
-        {isLoadingGoal ? (
-          <Text style={styles.squadText}>Loading goal...</Text>
-        ) : currentGoal ? (
+        {isLoadingUserGoal ? (
+          <Text style={styles.squadText}>Loading your goal...</Text>
+        ) : userGoal ? (
           <>
-            <Text style={styles.goalType}>{currentGoal.type}</Text>
-            <Text style={styles.squadText}>Baseline points: {currentGoal.baseline_points ?? 0}</Text>
+            <Text style={styles.goalType}>{userGoal.text}</Text>
+            <Text style={styles.squadText}>Your points: {userGoal.user_baseline_points ?? 0}</Text>
           </>
         ) : (
-          <Text style={styles.squadText}>No goal has been set for your squad yet.</Text>
+          <Text style={styles.squadText}>You haven't accepted a squad goal yet. Head to the Goals tab to get started.</Text>
         )}
       </View>
     </View>

@@ -1,6 +1,7 @@
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
 import { Redirect } from 'expo-router'
+import { createClient } from '@supabase/supabase-js'
 import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
@@ -27,12 +28,14 @@ type GoalSummary = {
 }
 
 export default function GoalsScreen() {
+  const supabase = createClient('https://syrrseyxjtxgnixpazag.supabase.co/functions/v1/hyper-service'))
   const { claims, isLoading, isLoggedIn } = useAuthContext()
   const [currentSquad, setCurrentSquad] = useState<SquadSummary | null>(null)
   const [currentGoal, setCurrentGoal] = useState<GoalSummary | null>(null)
   const [isLoadingSquad, setIsLoadingSquad] = useState(true)
   const [isLoadingGoal, setIsLoadingGoal] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isAccepting, setIsAccepting] = useState(false)
   const [goalType, setGoalType] = useState('')
   const [baselinePoints, setBaselinePoints] = useState('0')
 
@@ -150,23 +153,31 @@ export default function GoalsScreen() {
     setCurrentGoal({ id: insertedGoal.id, type: insertedGoal.type, baseline_points: insertedGoal.baseline_points })
     Alert.alert('Goal created', 'Your squad goal is now available on the dashboard.')
   }
-  type AcceptChallengeResult = {
-    scaled_text: string
-    scalable_quantity: string
-    user_baseline_points: number | null
-  }
-
-  export async function acceptChallenge(goalId: string): Promise<AcceptChallengeResult> {
-    const { data, error } = await supabase.functions.invoke('hyper-service', {
-      body: { goal_id: goalId }
-    })
-
-    if (error) {
-      const message = error.context?.error ?? error.message ?? 'Failed to accept challenge'
-      throw new Error(message)
+  async function handleAcceptGoal() {
+    if (!currentGoal) return
+    setIsAccepting(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('hyper-service', {
+        body: { goal_id: currentGoal.id },
+      })
+      if (error) {
+        const message = error.context?.error ?? error.message ?? 'Failed to accept challenge'
+        Alert.alert('Could not accept goal', message)
+        return
+      }
+      const scaledText: string = data?.scaled_text ?? data?.text ?? ''
+      Alert.alert(
+        'Goal accepted! 🎉',
+        scaledText
+          ? `Your personalised goal: ${scaledText}`
+          : 'Your goal has been scaled and saved to your dashboard.',
+      )
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error'
+      Alert.alert('Could not accept goal', message)
+    } finally {
+      setIsAccepting(false)
     }
-
-    return data as AcceptChallengeResult
   }
   return (
     <KeyboardAvoidingView
@@ -249,12 +260,12 @@ export default function GoalsScreen() {
             style={({ pressed }) => [
               styles.button,
               pressed && styles.buttonPressed,
-              isSaving && styles.buttonDisabled,
+              (isSaving || isAccepting) && styles.buttonDisabled,
             ]}
-            onPress={() => currentGoal && acceptChallenge(currentGoal.id)}
-            disabled={isSaving || !currentSquad?.id}
+            onPress={handleAcceptGoal}
+            disabled={isSaving || isAccepting || !currentGoal}
           >
-            {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Accept Goal</Text>}
+            {isAccepting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Accept Goal</Text>}
           </Pressable>
         </View>
       </ScrollView>
