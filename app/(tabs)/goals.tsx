@@ -1,6 +1,5 @@
 import { useAuthContext } from '@/hooks/use-auth-context'
-import { createClient } from '@supabase/supabase-js'
-import { Redirect } from 'expo-router'
+import { supabase } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
@@ -27,11 +26,7 @@ type GoalSummary = {
 }
 
 export default function GoalsScreen() {
-  const { claims, isLoading, isLoggedIn } = useAuthContext()
-  const supabase = createClient(
-    'https://syrrseyxjtxgnixpazag.supabase.co/functions/v1/hyper-service',
-    process.env.EXPO_PUBLIC_SUPABASE_KEY ?? ''
-  )
+  const { claims, isLoading } = useAuthContext()
   const [currentSquad, setCurrentSquad] = useState<SquadSummary | null>(null)
   const [currentGoal, setCurrentGoal] = useState<GoalSummary | null>(null)
   const [isLoadingSquad, setIsLoadingSquad] = useState(true)
@@ -109,11 +104,7 @@ export default function GoalsScreen() {
   }, [currentGoal])
 
   if (isLoading) {
-    return null
-  }
-
-  if (!isLoggedIn) {
-    return <Redirect href="/(auth)/login" />
+    return <ActivityIndicator style={{ flex: 1 }} color="#0a7ea4" />
   }
 
   const saveGoal = async () => {
@@ -159,9 +150,22 @@ export default function GoalsScreen() {
     if (!currentGoal) return
     setIsAccepting(true)
     try {
+      // --- Diagnostic logging ---
+      const { data: sessionData } = await supabase.auth.getSession()
+      const accessToken = sessionData?.session?.access_token
+      console.log('[handleAcceptGoal] currentGoal.id:', currentGoal.id)
+      console.log('[handleAcceptGoal] session present:', !!sessionData?.session)
+      console.log('[handleAcceptGoal] access_token present:', !!accessToken)
+      console.log('[handleAcceptGoal] calling supabase.functions.invoke("hyper-service") ...')
+      // --------------------------
+
       const { data, error } = await supabase.functions.invoke('hyper-service', {
         body: { goal_id: currentGoal.id },
       })
+
+      console.log('[handleAcceptGoal] response data:', JSON.stringify(data))
+      console.log('[handleAcceptGoal] response error:', JSON.stringify(error))
+
       if (error) {
         const message = error.context?.error ?? error.message ?? 'Failed to accept challenge'
         Alert.alert('Could not accept goal', message)
@@ -176,6 +180,7 @@ export default function GoalsScreen() {
       )
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error'
+      console.error('[handleAcceptGoal] threw exception:', message)
       Alert.alert('Could not accept goal', message)
     } finally {
       setIsAccepting(false)

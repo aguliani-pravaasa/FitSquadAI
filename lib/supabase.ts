@@ -1,29 +1,47 @@
 import { createClient } from '@supabase/supabase-js'
-import { deleteItemAsync, getItemAsync, setItemAsync } from 'expo-secure-store'
+import { Platform } from 'react-native'
 import 'react-native-url-polyfill/auto'
-const ExpoSecureStoreAdapter = {
+
+// Web-safe storage using localStorage
+const WebStorageAdapter = {
     getItem: (key: string) => {
-        console.debug('getItem', { key, getItemAsync })
-        return getItemAsync(key)
+        return Promise.resolve(localStorage.getItem(key))
     },
     setItem: (key: string, value: string) => {
-        if (value.length > 2048) {
-            console.warn(
-                'Value being stored in SecureStore is larger than 2048 bytes and it may not be stored successfully. In a future SDK version, this call may throw an error.'
-            )
-        }
-        return setItemAsync(key, value)
+        localStorage.setItem(key, value)
+        return Promise.resolve()
     },
     removeItem: (key: string) => {
-        return deleteItemAsync(key)
+        localStorage.removeItem(key)
+        return Promise.resolve()
     },
 }
+
+// Native storage using expo-secure-store (loaded lazily to avoid web crashes)
+const getNativeStorageAdapter = () => {
+    const { getItemAsync, setItemAsync, deleteItemAsync } = require('expo-secure-store')
+    return {
+        getItem: (key: string) => getItemAsync(key),
+        setItem: (key: string, value: string) => {
+            if (value.length > 2048) {
+                console.warn(
+                    'Value being stored in SecureStore is larger than 2048 bytes and it may not be stored successfully.'
+                )
+            }
+            return setItemAsync(key, value)
+        },
+        removeItem: (key: string) => deleteItemAsync(key),
+    }
+}
+
+const storage = Platform.OS === 'web' ? WebStorageAdapter : getNativeStorageAdapter()
+
 export const supabase = createClient(
     process.env.EXPO_PUBLIC_SUPABASE_URL ?? '',
     process.env.EXPO_PUBLIC_SUPABASE_KEY ?? process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '',
     {
         auth: {
-            storage: ExpoSecureStoreAdapter as any,
+            storage: storage as any,
             autoRefreshToken: true,
             persistSession: true,
             detectSessionInUrl: false,
