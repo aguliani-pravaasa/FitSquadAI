@@ -1,3 +1,4 @@
+import { useAuthContext } from '@/hooks/use-auth-context'
 import { createClient } from '@supabase/supabase-js'
 import { Redirect } from 'expo-router'
 import { useEffect, useState } from 'react'
@@ -26,6 +27,7 @@ type GoalSummary = {
 }
 
 export default function GoalsScreen() {
+  const { claims, isLoading, isLoggedIn } = useAuthContext()
   const supabase = createClient(
     'https://syrrseyxjtxgnixpazag.supabase.co/functions/v1/hyper-service',
     process.env.EXPO_PUBLIC_SUPABASE_KEY ?? ''
