@@ -148,26 +148,26 @@ export default function GoalsScreen() {
   }
   async function handleAcceptGoal() {
     if (!currentGoal) return
+    if (!claims?.sub) {
+      Alert.alert('Not signed in', 'You must be signed in to accept a goal.')
+      return
+    }
     setIsAccepting(true)
     try {
-      // --- Diagnostic logging ---
-      const { data: sessionData } = await supabase.auth.getSession()
-      const accessToken = sessionData?.session?.access_token
-      console.log('[handleAcceptGoal] currentGoal.id:', currentGoal.id)
-      console.log('[handleAcceptGoal] session present:', !!sessionData?.session)
-      console.log('[handleAcceptGoal] access_token present:', !!accessToken)
-      console.log('[handleAcceptGoal] calling supabase.functions.invoke("hyper-service") ...')
-      // --------------------------
-
       const { data, error } = await supabase.functions.invoke('hyper-service', {
-        body: { goal_id: currentGoal.id },
+        body: { goal_id: currentGoal.id, user_id: claims.sub },
       })
 
-      console.log('[handleAcceptGoal] response data:', JSON.stringify(data))
-      console.log('[handleAcceptGoal] response error:', JSON.stringify(error))
-
       if (error) {
-        const message = error.context?.error ?? error.message ?? 'Failed to accept challenge'
+        // Try to extract the error body text from the context
+        let message = error.message ?? 'Failed to accept challenge'
+        if (error.context?.text) {
+          try {
+            const bodyText = await error.context.text()
+            const bodyJson = JSON.parse(bodyText)
+            if (bodyJson?.error) message = bodyJson.error
+          } catch (_) { }
+        }
         Alert.alert('Could not accept goal', message)
         return
       }
@@ -180,7 +180,6 @@ export default function GoalsScreen() {
       )
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error'
-      console.error('[handleAcceptGoal] threw exception:', message)
       Alert.alert('Could not accept goal', message)
     } finally {
       setIsAccepting(false)

@@ -23,6 +23,7 @@ const MAPPING = {
   'chevron.right': 'chevron-right',
   'person.crop.circle.fill': 'account-circle',
   'target': 'my-location',
+  'trophy.fill': 'emoji-events',
 } as IconMapping;
 
 /**

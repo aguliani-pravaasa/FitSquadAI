@@ -1,8 +1,8 @@
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
-import { Redirect } from 'expo-router'
-import { useEffect, useState } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { Redirect, useFocusEffect } from 'expo-router'
+import { useCallback, useEffect, useState } from 'react'
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 type SquadSummary = {
   id: string
@@ -14,6 +14,7 @@ type GoalSummary = {
   id: string
   type: string
   baseline_points: number | null
+  scalable_quantity: boolean | null // Added scalable_quantity
 }
 
 type UserGoalSummary = {
@@ -84,9 +85,10 @@ export default function DashboardScreen() {
 
       setIsLoadingGoal(true)
 
+      // Added scalable_quantity to the select query
       const { data } = await supabase
         .from('goals')
-        .select('id, type, baseline_points')
+        .select('id, type, baseline_points, scalable_quantity')
         .eq('squad_id', currentSquad.id)
 
       setCurrentGoal(data?.[0] ?? null)
@@ -96,29 +98,49 @@ export default function DashboardScreen() {
     loadCurrentGoal()
   }, [currentSquad?.id])
 
-  useEffect(() => {
-    const loadUserGoal = async () => {
-      if (!claims?.sub || !currentGoal?.id) {
-        setUserGoal(null)
-        setIsLoadingUserGoal(false)
-        return
+  useFocusEffect(
+    useCallback(() => {
+      let active = true
+      const loadUserGoal = async () => {
+        if (!claims?.sub || !currentGoal?.id) {
+          setUserGoal(null)
+          setIsLoadingUserGoal(false)
+          return
+        }
+
+        setIsLoadingUserGoal(true)
+
+        const { data } = await supabase
+          .from('user_goals')
+          .select('text, user_baseline_points')
+          .eq('user_id', claims.sub)
+          .eq('goal_id', currentGoal.id)
+          .maybeSingle()
+
+        if (active) {
+          setUserGoal(data ?? null)
+          setIsLoadingUserGoal(false)
+        }
       }
 
-      setIsLoadingUserGoal(true)
+      loadUserGoal()
+      return () => { active = false }
+    }, [claims?.sub, currentGoal?.id])
+  )
 
-      const { data } = await supabase
-        .from('user_goals')
-        .select('text, user_baseline_points')
-        .eq('user_id', claims.sub)
-        .eq('goal_id', currentGoal.id)
-        .maybeSingle()
+  // Handler for logging data based on scalable_quantity
+  const handleLogData = () => {
+    if (!currentGoal) return;
 
-      setUserGoal(data ?? null)
-      setIsLoadingUserGoal(false)
+    if (currentGoal.scalable_quantity) {
+      // Logic for logging a scalable amount (e.g., miles run, pages read)
+      // Tip: You could use `router.push('/log-quantity')` here in Expo
+      Alert.alert("Log Data", "Navigate to scalable quantity input form.");
+    } else {
+      // Logic for logging a standard completion (e.g., did you meditate today? Yes/No)
+      Alert.alert("Log Data", "Mark goal as completed.");
     }
-
-    loadUserGoal()
-  }, [claims?.sub, currentGoal?.id])
+  }
 
   if (isLoading) {
     return null
@@ -150,6 +172,7 @@ export default function DashboardScreen() {
           <Text style={styles.squadText}>You are not currently joined to a squad.</Text>
         )}
       </View>
+
       <View style={styles.goalCard}>
         <Text style={styles.kicker}>Squad Goal</Text>
         {isLoadingGoal ? (
@@ -163,6 +186,7 @@ export default function DashboardScreen() {
           <Text style={styles.squadText}>No goal has been set for your squad yet.</Text>
         )}
       </View>
+
       <View style={styles.goalCard}>
         <Text style={styles.kicker}>User Goal</Text>
         {isLoadingUserGoal ? (
@@ -170,15 +194,24 @@ export default function DashboardScreen() {
         ) : userGoal ? (
           <>
             <Text style={styles.goalType}>{userGoal.text}</Text>
-            <Text style={styles.squadText}>Your points: {userGoal.user_baseline_points ?? 0}</Text>
+            <Text style={styles.squadText}>Baseline points: {userGoal.user_baseline_points ?? 0}</Text>
+
+            {/* New Button for logging data */}
+            <TouchableOpacity
+              style={styles.logButton}
+              onPress={handleLogData}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.logButtonText}>
+                {currentGoal?.scalable_quantity ? 'Log Quantity' : 'Log Completion'}
+              </Text>
+            </TouchableOpacity>
           </>
         ) : (
           <Text style={styles.squadText}>You haven't accepted a squad goal yet. Head to the Goals tab to get started.</Text>
         )}
       </View>
     </View>
-    
-    
   )
 }
 
@@ -188,6 +221,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0f1117',
     justifyContent: 'center',
     padding: 24,
+    gap: 16, // Added a gap here to space out the cards nicely
   },
   card: {
     backgroundColor: '#1a1d23',
@@ -266,5 +300,20 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: -0.3,
+  },
+  // New styles for the log data button
+  logButton: {
+    backgroundColor: '#0a7ea4',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginTop: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 })
