@@ -22,8 +22,9 @@ type SenderProfile = {
 
 type ChatMessage = {
   id: string
-  squad_id: string
+  squad_id: string | null
   user_id: string | null
+  type: 'user' | 'assistant'
   message: string
   created_at: string
   profiles?: SenderProfile | null
@@ -57,6 +58,10 @@ function formatMessageTime(timestamp: string) {
 }
 
 function getSenderLabel(message: ChatMessage, currentUserId?: string | null) {
+  if (message.type === 'assistant') {
+    return 'AI Coach'
+  }
+
   if (message.user_id === currentUserId) {
     return 'You'
   }
@@ -71,7 +76,7 @@ function sleep(milliseconds: number) {
 async function fetchMessagesForSquad(squadId: string) {
   const { data, error } = await supabase
     .from(CHAT_TABLE)
-    .select('id, squad_id, user_id, message, created_at, profiles(full_name, username)')
+    .select('id, squad_id, user_id, type, message, created_at, profiles(full_name, username)')
     .eq('squad_id', squadId)
     .order('created_at', { ascending: true })
     .limit(100)
@@ -83,12 +88,66 @@ async function fetchMessagesForSquad(squadId: string) {
   return (data ?? []) as ChatMessage[]
 }
 
-async function pollForCoachReply(squadId: string, userMessageId: string, createdAt: string) {
+async function fetchAssistantMessages(userId: string) {
+  const { data, error } = await supabase
+    .from(CHAT_TABLE)
+    .select('id, squad_id, user_id, type, message, created_at, profiles(full_name, username)')
+    .eq('user_id', userId)
+    .eq('type', 'assistant')
+    .is('squad_id', null)
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    throw error
+  }
+
+  return (data ?? []) as ChatMessage[]
+}
+
+function attachAssistantReplies(squadMessages: ChatMessage[], assistantMessages: ChatMessage[]) {
+  const combined = [...squadMessages]
+
+  assistantMessages.forEach((assistantMessage) => {
+    const assistantTime = new Date(assistantMessage.created_at).getTime()
+    const precedingSquadMessage = [...squadMessages]
+      .filter((message) => message.type === 'user')
+      .filter((message) => new Date(message.created_at).getTime() <= assistantTime)
+      .at(-1)
+
+    if (!precedingSquadMessage) {
+      return
+    }
+
+    const replyDelay = assistantTime - new Date(precedingSquadMessage.created_at).getTime()
+    if (replyDelay < 0 || replyDelay > 5 * 60 * 1000) {
+      return
+    }
+
+    combined.push(assistantMessage)
+  })
+
+  return combined.sort((left, right) => {
+    return new Date(left.created_at).getTime() - new Date(right.created_at).getTime()
+  })
+}
+
+async function fetchConversationMessages(squadId: string, userId: string) {
+  const [squadMessages, assistantMessages] = await Promise.all([
+    fetchMessagesForSquad(squadId),
+    fetchAssistantMessages(userId),
+  ])
+
+  return attachAssistantReplies(squadMessages, assistantMessages)
+}
+
+async function pollForCoachReply(userId: string, userMessageId: string, createdAt: string) {
   for (let attempt = 0; attempt < AI_POLL_ATTEMPTS; attempt += 1) {
     const { data, error } = await supabase
       .from(CHAT_TABLE)
-      .select('id, squad_id, user_id, message, created_at, profiles(full_name, username)')
-      .eq('squad_id', squadId)
+      .select('id, squad_id, user_id, type, message, created_at, profiles(full_name, username)')
+      .eq('type', 'assistant')
+      .is('squad_id', null)
+      .eq('user_id', userId)
       .gte('created_at', createdAt)
       .order('created_at', { ascending: true })
       .limit(10)
@@ -121,7 +180,7 @@ export default function ChatScreen() {
     let active = true
 
     const loadMessages = async () => {
-      if (!currentSquad?.id) {
+      if (!currentSquad?.id || !claims?.sub) {
         setMessages([])
         setLoadError(null)
         setIsLoadingMessages(false)
@@ -132,7 +191,7 @@ export default function ChatScreen() {
       setLoadError(null)
 
       try {
-        const nextMessages = await fetchMessagesForSquad(currentSquad.id)
+        const nextMessages = await fetchConversationMessages(currentSquad.id, claims.sub)
 
         if (active) {
           setMessages(nextMessages)
@@ -155,7 +214,42 @@ export default function ChatScreen() {
     return () => {
       active = false
     }
-  }, [currentSquad?.id])
+  }, [claims?.sub, currentSquad?.id])
+
+  useEffect(() => {
+    if (!currentSquad?.id) {
+      return
+    }
+
+    const channel = supabase
+      .channel('chat-room')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: CHAT_TABLE,
+        },
+        async () => {
+          try {
+            if (!claims?.sub) {
+              return
+            }
+
+            const nextMessages = await fetchConversationMessages(currentSquad.id, claims.sub)
+            setMessages(nextMessages)
+          } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unable to refresh messages.'
+            setLoadError(message)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [claims?.sub, currentSquad?.id])
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -205,12 +299,12 @@ export default function ChatScreen() {
         throw coachError
       }
 
-      const coachReply = await pollForCoachReply(currentSquad.id, userMessage.id, userMessage.created_at)
+      const coachReply = await pollForCoachReply(claims.sub, userMessage.id, userMessage.created_at)
 
       if (coachReply) {
         setMessages((current) => mergeMessages(current, [coachReply]))
       } else {
-        const refreshedMessages = await fetchMessagesForSquad(currentSquad.id)
+        const refreshedMessages = await fetchConversationMessages(currentSquad.id, claims.sub)
         setMessages(refreshedMessages)
       }
     } catch (error: unknown) {
@@ -269,7 +363,7 @@ export default function ChatScreen() {
               data={messages}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => {
-                const isMine = item.user_id === claims?.sub
+                const isMine = item.type === 'user' && item.user_id === claims?.sub
 
                 return (
                   <View style={[styles.messageRow, isMine && styles.messageRowMine]}>
