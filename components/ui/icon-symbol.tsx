@@ -18,7 +18,6 @@ const MAPPING = {
   'paperplane.fill': 'send',
   'rectangle.grid.2x2.fill': 'grid-view',
   'person.3.fill': 'groups',
-  'message.fill': 'chat',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
   'person.crop.circle.fill': 'account-circle',
