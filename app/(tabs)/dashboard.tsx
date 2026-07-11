@@ -14,6 +14,7 @@ import {
     View,
 } from 'react-native'
 
+
 type SquadSummary = {
   id: string
   name: string

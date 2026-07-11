@@ -176,6 +176,54 @@ export default function ChatScreen() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const listRef = useRef<FlatList<ChatMessage>>(null)
 
+  const [preference, setPreference] = useState<'gentle' | 'tough love' | 'full roast'>('gentle')
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isSavingPreference, setIsSavingPreference] = useState(false)
+
+  useEffect(() => {
+    const loadPreference = async () => {
+      if (!claims?.sub) return
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('ai_coach_preference')
+          .eq('id', claims.sub)
+          .maybeSingle()
+
+        if (!error && data?.ai_coach_preference) {
+          const pref = data.ai_coach_preference
+          if (pref === 'gentle' || pref === 'tough love' || pref === 'full roast') {
+            setPreference(pref)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load coach preference:', err)
+      }
+    }
+    loadPreference()
+  }, [claims?.sub])
+
+  const handlePreferenceChange = async (newPref: 'gentle' | 'tough love' | 'full roast') => {
+    if (!claims?.sub || isSavingPreference) return
+    setIsSavingPreference(true)
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ ai_coach_preference: newPref })
+        .eq('id', claims.sub)
+
+      if (error) {
+        throw error
+      }
+      setPreference(newPref)
+      setIsDropdownOpen(false)
+    } catch (err: any) {
+      Alert.alert('Error updating preference', err.message || 'Something went wrong')
+    } finally {
+      setIsSavingPreference(false)
+    }
+  }
+
   useEffect(() => {
     let active = true
 
@@ -284,7 +332,7 @@ export default function ChatScreen() {
         throw sendError ?? new Error('Unable to send message.')
       }
 
-      const userMessage = sentMessage as ChatMessage
+      const userMessage = sentMessage as unknown as ChatMessage
       setMessages((current) => mergeMessages(current, [userMessage]))
       setDraft('')
 
@@ -337,6 +385,53 @@ export default function ChatScreen() {
           <Text style={styles.subtitle}>
             Send a message and the coach will reply back in the conversation.
           </Text>
+        </View>
+
+        <View style={styles.preferenceContainer}>
+          <Text style={styles.preferenceLabel}>Coach Personality:</Text>
+          <View style={styles.dropdownWrapper}>
+            <Pressable
+              style={styles.dropdownHeader}
+              onPress={() => setIsDropdownOpen(!isDropdownOpen)}
+              disabled={isSavingPreference}
+            >
+              <Text style={styles.dropdownHeaderText}>
+                {preference === 'gentle' && 'Gentle Support 🤝'}
+                {preference === 'tough love' && 'Tough Love 😤'}
+                {preference === 'full roast' && 'Full Roast 🔥'}
+              </Text>
+              <Text style={styles.dropdownArrow}>{isDropdownOpen ? '▲' : '▼'}</Text>
+            </Pressable>
+
+            {isDropdownOpen && (
+              <View style={styles.dropdownList}>
+                <Pressable
+                  style={[styles.dropdownItem, preference === 'gentle' && styles.dropdownItemActive]}
+                  onPress={() => handlePreferenceChange('gentle')}
+                >
+                  <Text style={[styles.dropdownItemText, preference === 'gentle' && styles.dropdownItemTextActive]}>
+                    Gentle Support 🤝
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.dropdownItem, preference === 'tough love' && styles.dropdownItemActive]}
+                  onPress={() => handlePreferenceChange('tough love')}
+                >
+                  <Text style={[styles.dropdownItemText, preference === 'tough love' && styles.dropdownItemTextActive]}>
+                    Tough Love 😤
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.dropdownItem, preference === 'full roast' && styles.dropdownItemActive]}
+                  onPress={() => handlePreferenceChange('full roast')}
+                >
+                  <Text style={[styles.dropdownItemText, preference === 'full roast' && styles.dropdownItemTextActive]}>
+                    Full Roast 🔥
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
         </View>
 
         {!currentSquad ? (
@@ -617,5 +712,80 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     transform: [{ scale: 0.98 }],
+  },
+  preferenceContainer: {
+    backgroundColor: '#1a1d23',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#2a2d35',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    zIndex: 100,
+    elevation: 5,
+  },
+  preferenceLabel: {
+    color: '#9BA1A6',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  dropdownWrapper: {
+    width: 180,
+    position: 'relative',
+    zIndex: 110,
+  },
+  dropdownHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#111318',
+    borderColor: '#2a2d35',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  dropdownHeaderText: {
+    color: '#ECEDEE',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  dropdownArrow: {
+    color: '#9BA1A6',
+    fontSize: 10,
+    marginLeft: 8,
+  },
+  dropdownList: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#111318',
+    borderColor: '#2a2d35',
+    borderWidth: 1,
+    borderRadius: 8,
+    marginTop: 4,
+    zIndex: 1000,
+    elevation: 6,
+    overflow: 'hidden',
+  },
+  dropdownItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2a2d35',
+  },
+  dropdownItemActive: {
+    backgroundColor: '#1a1d23',
+  },
+  dropdownItemText: {
+    color: '#9BA1A6',
+    fontSize: 13,
+  },
+  dropdownItemTextActive: {
+    color: '#0a7ea4',
+    fontWeight: '600',
   },
 })
