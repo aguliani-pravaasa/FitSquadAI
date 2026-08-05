@@ -1,18 +1,17 @@
+import { Button, Column, Text } from '@expo/ui';
 import { Link } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-
 export default function ModalScreen() {
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title">This is a modal</ThemedText>
-      <Link href="/(auth)/login" dismissTo style={styles.link}>
-        <ThemedText type="link">Go to login to continue
-        </ThemedText>
+    <Column style={styles.container} spacing={16}>
+      <Text style={styles.title}>This is a modal</Text>
+      <Link href="/(auth)/login" dismissTo asChild>
+        <Button style={styles.link}>
+          Go to login to continue
+        </Button>
       </Link>
-    </ThemedView>
+    </Column>
   );
 }
 
@@ -22,6 +21,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#ECEDEE',
   },
   link: {
     marginTop: 15,

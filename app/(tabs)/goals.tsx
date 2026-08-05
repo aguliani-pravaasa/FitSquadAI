@@ -1,17 +1,16 @@
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
+import { Button, TextInput } from '@expo/ui'
 import { useEffect, useState } from 'react'
 import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native'
 
 type SquadSummary = {
@@ -78,6 +77,8 @@ export default function GoalsScreen() {
     const loadCurrentGoal = async () => {
       if (!currentSquad?.id) {
         setCurrentGoal(null)
+        setGoalType('')
+        setBaselinePoints('0')
         setIsLoadingGoal(false)
         return
       }
@@ -89,19 +90,15 @@ export default function GoalsScreen() {
         .select('id, type, baseline_points')
         .eq('squad_id', currentSquad.id)
 
-      setCurrentGoal(data?.[0] ?? null)
+      const nextGoal = data?.[0] ?? null
+      setCurrentGoal(nextGoal)
+      setGoalType(nextGoal?.type ?? '')
+      setBaselinePoints(nextGoal?.baseline_points?.toString() ?? '0')
       setIsLoadingGoal(false)
     }
 
     loadCurrentGoal()
   }, [currentSquad?.id])
-
-  useEffect(() => {
-    if (currentGoal) {
-      setGoalType(currentGoal.type)
-      setBaselinePoints(currentGoal.baseline_points?.toString() ?? '0')
-    }
-  }, [currentGoal])
 
   if (isLoading) {
     return <ActivityIndicator style={{ flex: 1 }} color="#0a7ea4" />
@@ -144,6 +141,8 @@ export default function GoalsScreen() {
     }
 
     setCurrentGoal({ id: insertedGoal.id, type: insertedGoal.type, baseline_points: insertedGoal.baseline_points })
+    setGoalType(insertedGoal.type)
+    setBaselinePoints(insertedGoal.baseline_points?.toString() ?? '0')
     Alert.alert('Goal created', 'Your squad goal is now available on the dashboard.')
   }
   async function handleAcceptGoal() {
@@ -166,7 +165,9 @@ export default function GoalsScreen() {
             const bodyText = await error.context.text()
             const bodyJson = JSON.parse(bodyText)
             if (bodyJson?.error) message = bodyJson.error
-          } catch (_) { }
+          } catch {
+            // Ignore malformed error payloads and fall back to the message.
+          }
         }
         Alert.alert('Could not accept goal', message)
         return
@@ -237,17 +238,13 @@ export default function GoalsScreen() {
             editable={!isSaving}
           />
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              pressed && styles.buttonPressed,
-              isSaving && styles.buttonDisabled,
-            ]}
+          <Button
+            style={[styles.button, isSaving && styles.buttonDisabled]}
             onPress={saveGoal}
             disabled={isSaving || !currentSquad?.id}
           >
             {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create Goal</Text>}
-          </Pressable>
+          </Button>
         </View>
 
         <View style={styles.card}>
@@ -262,17 +259,13 @@ export default function GoalsScreen() {
           ) : (
             <Text style={styles.helperText}>No squad goal has been created yet.</Text>
           )}
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              pressed && styles.buttonPressed,
-              (isSaving || isAccepting) && styles.buttonDisabled,
-            ]}
+          <Button
+            style={[styles.button, (isSaving || isAccepting) && styles.buttonDisabled]}
             onPress={handleAcceptGoal}
             disabled={isSaving || isAccepting || !currentGoal}
           >
             {isAccepting ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Accept Goal</Text>}
-          </Pressable>
+          </Button>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

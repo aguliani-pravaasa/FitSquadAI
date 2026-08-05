@@ -1,16 +1,14 @@
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
+import { Button, TextInput } from '@expo/ui'
 import { Redirect, useFocusEffect } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import {
     ActivityIndicator,
     Alert,
     Modal,
-    Pressable,
     StyleSheet,
     Text,
-    TextInput,
-    TouchableOpacity,
     View,
 } from 'react-native'
 
@@ -37,8 +35,10 @@ type UserGoalSummary = {
 
 export default function DashboardScreen() {
   const { claims, email, isLoading, isLoggedIn } = useAuthContext()
+  const userId = claims?.sub
   const [currentSquad, setCurrentSquad] = useState<SquadSummary | null>(null)
   const [currentGoal, setCurrentGoal] = useState<GoalSummary | null>(null)
+  const currentGoalId = currentGoal?.id ?? null
   const [userGoal, setUserGoal] = useState<UserGoalSummary | null>(null)
   const [isLoadingSquad, setIsLoadingSquad] = useState(true)
   const [isLoadingGoal, setIsLoadingGoal] = useState(true)
@@ -51,7 +51,7 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     const loadCurrentSquad = async () => {
-      if (!claims?.sub) {
+      if (!userId) {
         setCurrentSquad(null)
         setIsLoadingSquad(false)
         return
@@ -62,7 +62,7 @@ export default function DashboardScreen() {
       const { data: membership, error: membershipError } = await supabase
         .from('squad_members')
         .select('squad_id')
-        .eq('user_id', claims.sub)
+        .eq('user_id', userId)
         .eq('is_active', true)
         .order('join_date', { ascending: false })
         .limit(1)
@@ -92,7 +92,7 @@ export default function DashboardScreen() {
     }
 
     loadCurrentSquad()
-  }, [claims?.sub])
+  }, [userId])
 
   useEffect(() => {
     const loadCurrentGoal = async () => {
@@ -121,7 +121,7 @@ export default function DashboardScreen() {
     useCallback(() => {
       let active = true
       const loadUserGoal = async () => {
-        if (!claims?.sub || !currentGoal?.id) {
+        if (!userId || !currentGoalId) {
           setUserGoal(null)
           setIsLoadingUserGoal(false)
           return
@@ -132,8 +132,8 @@ export default function DashboardScreen() {
         const { data } = await supabase
           .from('user_goals')
           .select('id, text, user_baseline_points')
-          .eq('user_id', claims.sub)
-          .eq('goal_id', currentGoal.id)
+          .eq('user_id', userId)
+          .eq('goal_id', currentGoalId)
           .maybeSingle()
 
         if (active) {
@@ -144,7 +144,7 @@ export default function DashboardScreen() {
 
       loadUserGoal()
       return () => { active = false }
-    }, [claims?.sub, currentGoal?.id])
+    }, [userId, currentGoalId])
   )
 
   const closeLogModal = () => {
@@ -261,18 +261,13 @@ export default function DashboardScreen() {
               editable={!isUpdatingSquadGoal}
               multiline
             />
-            <TouchableOpacity
-              style={styles.saveGoalButton}
-              onPress={handleUpdateSquadGoal}
-              activeOpacity={0.8}
-              disabled={isUpdatingSquadGoal}
-            >
+            <Button style={styles.saveGoalButton} onPress={handleUpdateSquadGoal} disabled={isUpdatingSquadGoal}>
               {isUpdatingSquadGoal ? (
                 <ActivityIndicator color="#ffffff" />
               ) : (
                 <Text style={styles.saveGoalButtonText}>Update Squad Goal</Text>
               )}
-            </TouchableOpacity>
+            </Button>
           </>
         ) : (
           <Text style={styles.squadText}>You are not currently joined to a squad.</Text>
@@ -302,16 +297,12 @@ export default function DashboardScreen() {
             <Text style={styles.goalType}>{userGoal.text}</Text>
             <Text style={styles.squadText}>Baseline points: {userGoal.user_baseline_points ?? 0}</Text>
 
-            <TouchableOpacity
-              style={styles.logButton}
-              onPress={handleLogData}
-              activeOpacity={0.8}
-            >
+            <Button style={styles.logButton} onPress={handleLogData}>
               <Text style={styles.logButtonText}>Log Completion</Text>
-            </TouchableOpacity>
+            </Button>
           </>
         ) : (
-          <Text style={styles.squadText}>You haven't accepted a squad goal yet. Head to the Goals tab to get started.</Text>
+          <Text style={styles.squadText}>You haven&apos;t accepted a squad goal yet. Head to the Goals tab to get started.</Text>
         )}
       </View>
 
@@ -333,19 +324,11 @@ export default function DashboardScreen() {
               autoFocus
             />
             <View style={styles.modalActions}>
-              <Pressable
-                style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
-                onPress={closeLogModal}
-                disabled={isSubmittingLog}
-              >
+              <Button style={styles.secondaryButton} variant="outlined" onPress={closeLogModal} disabled={isSubmittingLog}>
                 <Text style={styles.secondaryButtonText}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.primaryButton,
-                  pressed && styles.buttonPressed,
-                  isSubmittingLog && styles.buttonDisabled,
-                ]}
+              </Button>
+              <Button
+                style={[styles.primaryButton, isSubmittingLog && styles.buttonDisabled]}
                 onPress={handleSubmitLog}
                 disabled={isSubmittingLog}
               >
@@ -354,7 +337,7 @@ export default function DashboardScreen() {
                 ) : (
                   <Text style={styles.primaryButtonText}>Submit</Text>
                 )}
-              </Pressable>
+              </Button>
             </View>
           </View>
         </View>

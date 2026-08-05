@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { Button, TextInput } from '@expo/ui'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import {
@@ -6,11 +7,8 @@ import {
     Alert,
     KeyboardAvoidingView,
     Platform,
-    Pressable,
     StyleSheet,
     Text,
-    TextInput,
-    TouchableOpacity,
     View
 } from 'react-native'
 
@@ -113,12 +111,8 @@ export default function Login() {
                         />
                     </View>
 
-                    <Pressable
-                        style={({ pressed }) => [
-                            styles.button,
-                            pressed && styles.buttonPressed,
-                            loading && styles.buttonDisabled,
-                        ]}
+                    <Button
+                        style={[styles.button, loading && styles.buttonDisabled]}
                         onPress={handleAuth}
                         disabled={loading}
                     >
@@ -129,16 +123,16 @@ export default function Login() {
                                 {isLogin ? 'Sign In' : 'Sign Up'}
                             </Text>
                         )}
-                    </Pressable>
+                    </Button>
                 </View>
 
                 {/* Footer */}
-                <TouchableOpacity style={styles.footer} onPress={() => setIslogin(!isLogin)}>
+                <Button variant="text" style={styles.footerButton} onPress={() => setIslogin(!isLogin)}>
                     <Text style={styles.footerText}>
                         {isLogin ? "Don't have an account? " : 'Already have an account? '}
                     </Text>
                     <Text style={styles.footerLink}>{isLogin ? 'Sign Up' : 'Sign In'}</Text>
-                </TouchableOpacity>
+                </Button>
             </View>
         </KeyboardAvoidingView>
     )
@@ -194,6 +188,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#0a7ea4',
         borderRadius: 14,
         paddingVertical: 16,
+        paddingHorizontal: 16,
         alignItems: 'center',
         marginTop: 4,
         shadowColor: '#0a7ea4',
@@ -215,10 +210,12 @@ const styles = StyleSheet.create({
         fontWeight: '700',
         letterSpacing: 0.2,
     },
-    footer: {
+    footerButton: {
+        alignSelf: 'center',
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
+        marginTop: 8,
     },
     footerText: {
         color: '#687076',

@@ -1,18 +1,17 @@
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
+import { Button, TextInput } from '@expo/ui'
 import { Redirect } from 'expo-router'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native'
 
 type ProfileFormState = {
@@ -23,30 +22,25 @@ type ProfileFormState = {
 }
 
 function calculateFitnessLevel(age: number, heightCm: number, weightKg: number, gender: string) {
-  const isWoman = /woman|female|girl/i.test(gender.trim())
   const bmr = (weightKg)/((heightCm/100)^2)
 
   return Math.round(bmr)
 }
 
+function buildProfileForm(profile: ReturnType<typeof useAuthContext>['profile']): ProfileFormState {
+  return {
+    age: profile?.age?.toString() ?? '',
+    height: profile?.height_cm?.toString() ?? '',
+    weight: profile?.weight_kg?.toString() ?? '',
+    gender: profile?.gender?.toString() ?? '',
+  }
+}
+
 export default function ProfilesScreen() {
   const { claims, email, isLoading, isLoggedIn, profile } = useAuthContext()
   const [isSaving, setIsSaving] = useState(false)
-  const [form, setForm] = useState<ProfileFormState>({
-    age: '',
-    height: '',
-    weight: '',
-    gender: '',
-  })
-
-  useEffect(() => {
-    setForm({
-      age: profile?.age?.toString() ?? '',
-      height: profile?.height_cm?.toString() ?? '',
-      weight: profile?.weight_kg?.toString() ?? '',
-      gender: profile?.gender?.toString() ?? '',
-    })
-  }, [profile])
+  const [form, setForm] = useState<ProfileFormState | null>(null)
+  const formState = form ?? buildProfileForm(profile)
 
   if (isLoading) {
     return null
@@ -62,22 +56,22 @@ export default function ProfilesScreen() {
       return
     }
 
-    const ageValue = form.age.trim() ? Number.parseInt(form.age.trim(), 10) : null
-    const heightValue = form.height.trim() ? Number.parseInt(form.height.trim(), 10) : null
-    const weightValue = form.weight.trim() ? Number.parseFloat(form.weight.trim()) : null
-    const genderValue = form.gender.trim() || null
+    const ageValue = formState.age.trim() ? Number.parseInt(formState.age.trim(), 10) : null
+    const heightValue = formState.height.trim() ? Number.parseInt(formState.height.trim(), 10) : null
+    const weightValue = formState.weight.trim() ? Number.parseFloat(formState.weight.trim()) : null
+    const genderValue = formState.gender.trim() || null
 
-    if (form.age.trim() && Number.isNaN(ageValue)) {
+    if (formState.age.trim() && Number.isNaN(ageValue)) {
       Alert.alert('Invalid age', 'Please enter a valid age in years.')
       return
     }
 
-    if (form.height.trim() && Number.isNaN(heightValue)) {
+    if (formState.height.trim() && Number.isNaN(heightValue)) {
       Alert.alert('Invalid height', 'Please enter a valid height in centimeters.')
       return
     }
 
-    if (form.weight.trim() && Number.isNaN(weightValue)) {
+    if (formState.weight.trim() && Number.isNaN(weightValue)) {
       Alert.alert('Invalid weight', 'Please enter a valid weight in kilograms.')
       return
     }
@@ -152,8 +146,8 @@ export default function ProfilesScreen() {
           <Text style={styles.label}>Age</Text>
           <TextInput
             style={styles.input}
-            value={form.age}
-            onChangeText={(text) => setForm((current) => ({ ...current, age: text }))}
+            value={formState.age}
+            onChangeText={(text) => setForm((current) => ({ ...(current ?? buildProfileForm(profile)), age: text }))}
             placeholder="28"
             placeholderTextColor="#687076"
             keyboardType="number-pad"
@@ -163,8 +157,8 @@ export default function ProfilesScreen() {
           <Text style={styles.label}>Height (cm)</Text>
           <TextInput
             style={styles.input}
-            value={form.height}
-            onChangeText={(text) => setForm((current) => ({ ...current, height: text }))}
+            value={formState.height}
+            onChangeText={(text) => setForm((current) => ({ ...(current ?? buildProfileForm(profile)), height: text }))}
             placeholder="180"
             placeholderTextColor="#687076"
             keyboardType="number-pad"
@@ -174,8 +168,8 @@ export default function ProfilesScreen() {
           <Text style={styles.label}>Weight (kg)</Text>
           <TextInput
             style={styles.input}
-            value={form.weight}
-            onChangeText={(text) => setForm((current) => ({ ...current, weight: text }))}
+            value={formState.weight}
+            onChangeText={(text) => setForm((current) => ({ ...(current ?? buildProfileForm(profile)), weight: text }))}
             placeholder="75.5"
             placeholderTextColor="#687076"
             keyboardType="decimal-pad"
@@ -185,25 +179,21 @@ export default function ProfilesScreen() {
           <Text style={styles.label}>Gender</Text>
           <TextInput
             style={styles.input}
-            value={form.gender}
-            onChangeText={(text) => setForm((current) => ({ ...current, gender: text }))}
+            value={formState.gender}
+            onChangeText={(text) => setForm((current) => ({ ...(current ?? buildProfileForm(profile)), gender: text }))}
             placeholder="Male, Female, Non-binary, etc."
             placeholderTextColor="#687076"
             autoCapitalize="words"
             editable={!isSaving}
           />
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              pressed && styles.buttonPressed,
-              isSaving && styles.buttonDisabled,
-            ]}
+          <Button
+            style={[styles.button, isSaving && styles.buttonDisabled]}
             onPress={saveProfile}
             disabled={isSaving}
           >
             {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save Profile</Text>}
-          </Pressable>
+          </Button>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

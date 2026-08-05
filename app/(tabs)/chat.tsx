@@ -1,5 +1,6 @@
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
+import { Button, TextInput } from '@expo/ui'
 import { Redirect } from 'expo-router'
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -8,10 +9,8 @@ import {
     FlatList,
     KeyboardAvoidingView,
     Platform,
-    Pressable,
     StyleSheet,
     Text,
-    TextInput,
     View,
 } from 'react-native'
 
@@ -390,7 +389,8 @@ export default function ChatScreen() {
         <View style={styles.preferenceContainer}>
           <Text style={styles.preferenceLabel}>Coach Personality:</Text>
           <View style={styles.dropdownWrapper}>
-            <Pressable
+            <Button
+              variant="outlined"
               style={styles.dropdownHeader}
               onPress={() => setIsDropdownOpen(!isDropdownOpen)}
               disabled={isSavingPreference}
@@ -401,34 +401,37 @@ export default function ChatScreen() {
                 {preference === 'full roast' && 'Full Roast 🔥'}
               </Text>
               <Text style={styles.dropdownArrow}>{isDropdownOpen ? '▲' : '▼'}</Text>
-            </Pressable>
+            </Button>
 
             {isDropdownOpen && (
               <View style={styles.dropdownList}>
-                <Pressable
-                  style={[styles.dropdownItem, preference === 'gentle' && styles.dropdownItemActive]}
+                <Button
+                  variant={preference === 'gentle' ? 'filled' : 'outlined'}
+                  style={styles.dropdownItem}
                   onPress={() => handlePreferenceChange('gentle')}
                 >
                   <Text style={[styles.dropdownItemText, preference === 'gentle' && styles.dropdownItemTextActive]}>
                     Gentle Support 🤝
                   </Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.dropdownItem, preference === 'tough love' && styles.dropdownItemActive]}
+                </Button>
+                <Button
+                  variant={preference === 'tough love' ? 'filled' : 'outlined'}
+                  style={styles.dropdownItem}
                   onPress={() => handlePreferenceChange('tough love')}
                 >
                   <Text style={[styles.dropdownItemText, preference === 'tough love' && styles.dropdownItemTextActive]}>
                     Tough Love 😤
                   </Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.dropdownItem, preference === 'full roast' && styles.dropdownItemActive]}
+                </Button>
+                <Button
+                  variant={preference === 'full roast' ? 'filled' : 'outlined'}
+                  style={styles.dropdownItem}
                   onPress={() => handlePreferenceChange('full roast')}
                 >
                   <Text style={[styles.dropdownItemText, preference === 'full roast' && styles.dropdownItemTextActive]}>
                     Full Roast 🔥
                   </Text>
-                </Pressable>
+                </Button>
               </View>
             )}
           </View>
@@ -506,12 +509,8 @@ export default function ChatScreen() {
               editable={!isSending}
               multiline
             />
-            <Pressable
-              style={({ pressed }) => [
-                styles.sendButton,
-                pressed && styles.buttonPressed,
-                isSending && styles.buttonDisabled,
-              ]}
+            <Button
+              style={[styles.sendButton, isSending && styles.buttonDisabled]}
               onPress={handleSend}
               disabled={isSending}
             >
@@ -520,7 +519,7 @@ export default function ChatScreen() {
               ) : (
                 <Text style={styles.sendButtonText}>Send</Text>
               )}
-            </Pressable>
+            </Button>
           </View>
         ) : null}
       </View>
@@ -740,12 +739,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#111318',
-    borderColor: '#2a2d35',
-    borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
+    minHeight: 0,
   },
   dropdownHeaderText: {
     color: '#ECEDEE',
@@ -774,18 +771,15 @@ const styles = StyleSheet.create({
   dropdownItem: {
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#2a2d35',
-  },
-  dropdownItemActive: {
-    backgroundColor: '#1a1d23',
+    minHeight: 0,
+    alignItems: 'flex-start',
   },
   dropdownItemText: {
-    color: '#9BA1A6',
+    color: '#ECEDEE',
     fontSize: 13,
   },
   dropdownItemTextActive: {
-    color: '#0a7ea4',
+    color: '#ffffff',
     fontWeight: '600',
   },
 })
