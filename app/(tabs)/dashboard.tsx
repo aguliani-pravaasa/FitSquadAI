@@ -1,12 +1,14 @@
+import { IconSymbol } from '@/components/ui/icon-symbol'
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
 import { Button, TextInput } from '@expo/ui'
-import { Redirect, useFocusEffect } from 'expo-router'
+import { Redirect, useFocusEffect, useRouter } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import {
     ActivityIndicator,
     Alert,
     Modal,
+    Pressable,
     ScrollView,
     StyleSheet,
     Text,
@@ -43,7 +45,8 @@ type LeaderboardMember = {
 }
 
 export default function DashboardScreen() {
-  const { claims, email, isLoading, isLoggedIn } = useAuthContext()
+  const { claims, email, isLoading, isLoggedIn, profile } = useAuthContext()
+  const router = useRouter()
   const userId = claims?.sub
 
   const [currentSquad, setCurrentSquad] = useState<SquadSummary | null>(null)
@@ -56,6 +59,7 @@ export default function DashboardScreen() {
   const [isLoadingGoal, setIsLoadingGoal] = useState(true)
   const [isLoadingUserGoal, setIsLoadingUserGoal] = useState(true)
   const [isLoadingLeaders, setIsLoadingLeaders] = useState(false)
+  const [isSettingsModalVisible, setIsSettingsModalVisible] = useState(false)
 
   const [isLogModalVisible, setIsLogModalVisible] = useState(false)
   const [logAmount, setLogAmount] = useState('')
@@ -71,6 +75,31 @@ export default function DashboardScreen() {
   const [goalTypeDraft, setGoalTypeDraft] = useState('')
   const [baselinePointsDraft, setBaselinePointsDraft] = useState('0')
   const [isAcceptingGoal, setIsAcceptingGoal] = useState(false)
+
+  const openSettingsMenu = () => {
+    setSquadGoalDraft(currentSquad?.squad_goal ?? '')
+    setGoalTypeDraft(currentGoal?.type ?? '')
+    setBaselinePointsDraft(currentGoal?.baseline_points?.toString() ?? '0')
+    setIsEditingSquadGoal(false)
+    setIsGoalFormOpen(false)
+    setIsCreatingGoal(false)
+    setIsSettingsModalVisible(true)
+  }
+
+  const closeSettingsMenu = () => {
+    setIsSettingsModalVisible(false)
+    setIsEditingSquadGoal(false)
+    setIsGoalFormOpen(false)
+    setIsCreatingGoal(false)
+    setSquadGoalDraft(currentSquad?.squad_goal ?? '')
+    setGoalTypeDraft(currentGoal?.type ?? '')
+    setBaselinePointsDraft(currentGoal?.baseline_points?.toString() ?? '0')
+  }
+
+  const openProfileEditor = () => {
+    closeSettingsMenu()
+    router.push('/(tabs)/profiles')
+  }
 
   useEffect(() => {
     const loadCurrentSquad = async () => {
@@ -434,6 +463,14 @@ export default function DashboardScreen() {
 
       <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
         <View style={styles.heroCard}>
+          <Pressable
+            accessibilityLabel="Open dashboard settings"
+            accessibilityRole="button"
+            onPress={openSettingsMenu}
+            style={({ pressed }) => [styles.settingsButton, pressed && styles.settingsButtonPressed]}
+          >
+            <IconSymbol name="gearshape.fill" size={16} color="#eef5ff" />
+          </Pressable>
           <Text style={styles.kicker}>Today</Text>
           <Text style={styles.title}>Dashboard</Text>
           <Text style={styles.description}>Signed in as</Text>
@@ -451,43 +488,11 @@ export default function DashboardScreen() {
               <Text style={styles.squadText}>
                 {currentSquad.squad_goal ? `Squad mission: ${currentSquad.squad_goal}` : 'No squad mission yet.'}
               </Text>
-
-              {isEditingSquadGoal ? (
-                <>
-                  <TextInput
-                    style={styles.squadGoalInput}
-                    value={squadGoalDraft}
-                    onChangeText={setSquadGoalDraft}
-                    placeholder="Set a squad mission"
-                    placeholderTextColor="#687076"
-                    editable={!isUpdatingSquadGoal}
-                    multiline
-                  />
-                  <View style={styles.rowActions}>
-                    <Button
-                      style={styles.ghostButton}
-                      variant="outlined"
-                      onPress={() => setIsEditingSquadGoal(false)}
-                      disabled={isUpdatingSquadGoal}
-                    >
-                      <Text style={styles.ghostButtonText}>Cancel</Text>
-                    </Button>
-                    <Button style={styles.primaryButton} onPress={handleUpdateSquadGoal} disabled={isUpdatingSquadGoal}>
-                      {isUpdatingSquadGoal ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.primaryButtonText}>Save</Text>}
-                    </Button>
-                  </View>
-                </>
-              ) : (
-                <Button style={styles.primaryButton} onPress={() => setIsEditingSquadGoal(true)}>
-                  <Text style={styles.primaryButtonText}>
-                    {currentSquad.squad_goal ? 'Edit Squad Mission' : 'Set Squad Mission'}
-                  </Text>
-                </Button>
-              )}
+              <Text style={styles.squadText}>Open settings to update the squad mission.</Text>
             </>
           ) : (
             <Text style={styles.squadText}>
-              Join or create a squad from the Squads tab to start tracking together.
+              Join or create a squad from the Squads tab, then use settings to manage it.
             </Text>
           )}
         </View>
@@ -500,78 +505,12 @@ export default function DashboardScreen() {
             <>
               <Text style={styles.goalType}>{currentGoal.type}</Text>
               <Text style={styles.squadText}>Baseline points: {currentGoal.baseline_points ?? 0}</Text>
-              {!isGoalFormOpen ? (
-                <Button style={styles.ghostButton} variant="outlined" onPress={() => setIsGoalFormOpen(true)}>
-                  <Text style={styles.ghostButtonText}>Edit Goal</Text>
-                </Button>
-              ) : null}
+              <Text style={styles.squadText}>Use settings to edit or recreate the squad goal.</Text>
             </>
           ) : (
             <Text style={styles.squadText}>No squad goal yet. Create one here instead of switching tabs.</Text>
           )}
-
-          {!isGoalFormOpen && !currentGoal ? (
-            <Button
-              style={styles.primaryButton}
-              onPress={() => {
-                setIsGoalFormOpen(true)
-                setIsCreatingGoal(true)
-              }}
-            >
-              <Text style={styles.primaryButtonText}>Create Squad Goal</Text>
-            </Button>
-          ) : null}
-
-          {isGoalFormOpen ? (
-            <>
-              <TextInput
-                style={styles.squadGoalInput}
-                value={goalTypeDraft}
-                onChangeText={setGoalTypeDraft}
-                placeholder="Run 20 minutes daily"
-                placeholderTextColor="#687076"
-                multiline
-                editable={!isSavingGoal}
-              />
-              <TextInput
-                style={styles.input}
-                value={baselinePointsDraft}
-                onChangeText={setBaselinePointsDraft}
-                placeholder="0"
-                placeholderTextColor="#687076"
-                keyboardType="number-pad"
-                editable={!isSavingGoal}
-              />
-              <View style={styles.rowActions}>
-                <Button
-                  style={styles.ghostButton}
-                  variant="outlined"
-                  onPress={() => {
-                    setIsGoalFormOpen(false)
-                    setIsCreatingGoal(false)
-                    setGoalTypeDraft(currentGoal?.type ?? '')
-                    setBaselinePointsDraft(currentGoal?.baseline_points?.toString() ?? '0')
-                  }}
-                  disabled={isSavingGoal}
-                >
-                  <Text style={styles.ghostButtonText}>Cancel</Text>
-                </Button>
-                <Button style={styles.primaryButton} onPress={handleSaveSquadGoal} disabled={isSavingGoal}>
-                  {isSavingGoal ? (
-                    <ActivityIndicator color="#ffffff" />
-                  ) : (
-                    <Text style={styles.primaryButtonText}>{isCreatingGoal ? 'Create' : 'Save'}</Text>
-                  )}
-                </Button>
-              </View>
-            </>
-          ) : null}
-
-          {currentGoal && !userGoal ? (
-            <Button style={styles.primaryButton} onPress={handleAcceptGoal} disabled={isAcceptingGoal}>
-              {isAcceptingGoal ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.primaryButtonText}>Accept My Goal</Text>}
-            </Button>
-          ) : null}
+          <Text style={styles.squadText}>Open settings to edit or create the squad goal.</Text>
         </View>
 
         <View style={styles.card}>
@@ -645,6 +584,177 @@ export default function DashboardScreen() {
           </View>
         </View>
       </Modal>
+
+      <Modal visible={isSettingsModalVisible} transparent animationType="fade" onRequestClose={closeSettingsMenu}>
+        <View style={styles.modalBackdrop}>
+          <View style={[styles.modalCard, styles.settingsModalCard]}>
+            <View style={styles.settingsHeader}>
+              <View style={styles.settingsHeaderCopy}>
+                <Text style={styles.modalTitle}>Settings</Text>
+                <Text style={styles.modalSubtitle}>Edit squad, users, and goals from one place.</Text>
+              </View>
+              <Button style={styles.closeButton} variant="outlined" onPress={closeSettingsMenu}>
+                <Text style={styles.ghostButtonText}>Close</Text>
+              </Button>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.settingsContent} showsVerticalScrollIndicator={false}>
+              <View style={styles.settingsSection}>
+                <Text style={styles.settingsSectionLabel}>Squad</Text>
+                <Text style={styles.settingsSectionTitle}>{currentSquad?.name ?? 'No active squad'}</Text>
+                <Text style={styles.settingsSectionText}>
+                  {currentSquad
+                    ? `Invite code: ${currentSquad.inv_code}`
+                    : 'Join or create a squad to manage the mission here.'}
+                </Text>
+                <Text style={styles.settingsSectionText}>
+                  {currentSquad?.squad_goal ? `Mission: ${currentSquad.squad_goal}` : 'No squad mission set yet.'}
+                </Text>
+
+                {currentSquad ? (
+                  !isEditingSquadGoal ? (
+                    <Button
+                      style={styles.primaryButton}
+                      onPress={() => {
+                        setSquadGoalDraft(currentSquad.squad_goal ?? '')
+                        setIsEditingSquadGoal(true)
+                      }}
+                    >
+                      <Text style={styles.primaryButtonText}>
+                        {currentSquad.squad_goal ? 'Edit Squad Mission' : 'Set Squad Mission'}
+                      </Text>
+                    </Button>
+                  ) : (
+                    <>
+                      <Text style={styles.settingsFieldLabel}>Squad mission</Text>
+                      <TextInput
+                        style={styles.squadGoalInput}
+                        value={squadGoalDraft}
+                        onChangeText={setSquadGoalDraft}
+                        placeholder="Set a squad mission"
+                        placeholderTextColor="#687076"
+                        editable={!isUpdatingSquadGoal}
+                        multiline
+                      />
+                      <View style={styles.rowActions}>
+                        <Button
+                          style={styles.ghostButton}
+                          variant="outlined"
+                          onPress={() => {
+                            setIsEditingSquadGoal(false)
+                            setSquadGoalDraft(currentSquad?.squad_goal ?? '')
+                          }}
+                          disabled={isUpdatingSquadGoal}
+                        >
+                          <Text style={styles.ghostButtonText}>Cancel</Text>
+                        </Button>
+                        <Button style={styles.primaryButton} onPress={handleUpdateSquadGoal} disabled={isUpdatingSquadGoal}>
+                          {isUpdatingSquadGoal ? (
+                            <ActivityIndicator color="#ffffff" />
+                          ) : (
+                            <Text style={styles.primaryButtonText}>Save</Text>
+                          )}
+                        </Button>
+                      </View>
+                    </>
+                  )
+                ) : null}
+              </View>
+
+              <View style={styles.settingsSection}>
+                <Text style={styles.settingsSectionLabel}>Users</Text>
+                <Text style={styles.settingsSectionTitle}>{profile?.full_name ?? 'Profile not set'}</Text>
+                <Text style={styles.settingsSectionText}>{email ?? 'Email unavailable'}</Text>
+                <Text style={styles.settingsSectionText}>Username: {profile?.username ?? 'Not set'}</Text>
+                <Text style={styles.settingsSectionText}>Body details live in your profile screen.</Text>
+                <Button style={styles.ghostButton} variant="outlined" onPress={openProfileEditor}>
+                  <Text style={styles.ghostButtonText}>Edit Body Details</Text>
+                </Button>
+              </View>
+
+              <View style={styles.settingsSection}>
+                <Text style={styles.settingsSectionLabel}>Goals</Text>
+                <Text style={styles.settingsSectionTitle}>{currentGoal?.type ?? 'No squad goal yet'}</Text>
+                <Text style={styles.settingsSectionText}>
+                  {currentGoal ? `Baseline points: ${currentGoal.baseline_points ?? 0}` : 'Create a squad goal to start tracking.'}
+                </Text>
+
+                {!isGoalFormOpen ? (
+                  <View style={styles.rowActions}>
+                    <Button
+                      style={styles.primaryButton}
+                      onPress={() => {
+                        setGoalTypeDraft(currentGoal?.type ?? '')
+                        setBaselinePointsDraft(currentGoal?.baseline_points?.toString() ?? '0')
+                        setIsCreatingGoal(!currentGoal)
+                        setIsGoalFormOpen(true)
+                      }}
+                    >
+                      <Text style={styles.primaryButtonText}>{currentGoal ? 'Edit Goal' : 'Create Goal'}</Text>
+                    </Button>
+                    {currentGoal && !userGoal ? (
+                      <Button style={styles.ghostButton} variant="outlined" onPress={handleAcceptGoal} disabled={isAcceptingGoal}>
+                        {isAcceptingGoal ? (
+                          <ActivityIndicator color="#ffffff" />
+                        ) : (
+                          <Text style={styles.ghostButtonText}>Accept Goal</Text>
+                        )}
+                      </Button>
+                    ) : null}
+                  </View>
+                ) : (
+                  <>
+                    <Text style={styles.settingsFieldLabel}>Goal description</Text>
+                    <TextInput
+                      style={styles.squadGoalInput}
+                      value={goalTypeDraft}
+                      onChangeText={setGoalTypeDraft}
+                      placeholder="Run 20 minutes daily"
+                      placeholderTextColor="#687076"
+                      multiline
+                      editable={!isSavingGoal}
+                    />
+
+                    <Text style={styles.settingsFieldLabel}>Baseline points</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={baselinePointsDraft}
+                      onChangeText={setBaselinePointsDraft}
+                      placeholder="0"
+                      placeholderTextColor="#687076"
+                      keyboardType="number-pad"
+                      editable={!isSavingGoal}
+                    />
+
+                    <View style={styles.rowActions}>
+                      <Button
+                        style={styles.ghostButton}
+                        variant="outlined"
+                        onPress={() => {
+                          setIsGoalFormOpen(false)
+                          setIsCreatingGoal(false)
+                          setGoalTypeDraft(currentGoal?.type ?? '')
+                          setBaselinePointsDraft(currentGoal?.baseline_points?.toString() ?? '0')
+                        }}
+                        disabled={isSavingGoal}
+                      >
+                        <Text style={styles.ghostButtonText}>Cancel</Text>
+                      </Button>
+                      <Button style={styles.primaryButton} onPress={handleSaveSquadGoal} disabled={isSavingGoal}>
+                        {isSavingGoal ? (
+                          <ActivityIndicator color="#ffffff" />
+                        ) : (
+                          <Text style={styles.primaryButtonText}>{isCreatingGoal ? 'Create' : 'Save'}</Text>
+                        )}
+                      </Button>
+                    </View>
+                  </>
+                )}
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -678,12 +788,31 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   heroCard: {
+    position: 'relative',
     backgroundColor: '#141b26',
     borderColor: '#273245',
     borderWidth: 1,
     borderRadius: 24,
     padding: 20,
+    paddingRight: 64,
     gap: 8,
+  },
+  settingsButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#0c121b',
+    borderColor: '#2f3e53',
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingsButtonPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.96 }],
   },
   card: {
     backgroundColor: '#111722',
@@ -829,6 +958,19 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 12,
   },
+  settingsModalCard: {
+    maxHeight: '90%',
+  },
+  settingsHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  settingsHeaderCopy: {
+    flex: 1,
+    gap: 6,
+  },
   modalTitle: {
     color: '#ECEDEE',
     fontSize: 20,
@@ -848,5 +990,52 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
+  },
+  closeButton: {
+    minWidth: 72,
+    backgroundColor: '#141c28',
+    borderColor: '#304157',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingsContent: {
+    gap: 14,
+    paddingBottom: 8,
+  },
+  settingsSection: {
+    backgroundColor: '#0c121b',
+    borderWidth: 1,
+    borderColor: '#273245',
+    borderRadius: 20,
+    padding: 16,
+    gap: 10,
+  },
+  settingsSectionLabel: {
+    color: '#5ec27a',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  settingsSectionTitle: {
+    color: '#ECEDEE',
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  settingsSectionText: {
+    color: '#a0afbf',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  settingsFieldLabel: {
+    color: '#9fb1c2',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
 })
