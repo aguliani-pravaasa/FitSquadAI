@@ -7,11 +7,25 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? 'dark' : 'light';
+  const isDark = theme === 'dark';
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[theme].tint,
+        tabBarInactiveTintColor: isDark ? '#7f8a96' : '#6a737d',
+        tabBarStyle: {
+          height: 72,
+          backgroundColor: isDark ? '#12161d' : '#f8fafc',
+          borderTopColor: isDark ? '#212734' : '#dde3ea',
+          borderTopWidth: 1,
+          paddingBottom: 10,
+          paddingTop: 8,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '700',
+        },
         headerShown: false,
       }}>
       <Tabs.Screen
@@ -29,16 +43,9 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="leaderboard"
-        options={{
-          title: 'Leaderboard',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="trophy.fill" color={color} />,
-        }}
-      />
-      <Tabs.Screen
         name="chat"
         options={{
-          title: 'AI Coach',
+          title: 'Coach',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="message.fill" color={color} />,
         }}
       />
@@ -50,10 +57,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="leaderboard"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
         name="goals"
         options={{
-          title: 'Goals',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="target" color={color} />,
+          href: null,
         }}
       />
       <Tabs.Screen

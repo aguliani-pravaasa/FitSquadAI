@@ -85,6 +85,7 @@ export default function SquadsScreen() {
   const { claims, isLoading, isLoggedIn } = useAuthContext()
   const [isCreating, setIsCreating] = useState(false)
   const [isJoining, setIsJoining] = useState(false)
+  const [showCreateForm, setShowCreateForm] = useState(false)
   const [showJoinForm, setShowJoinForm] = useState(false)
   const [createdInviteCode, setCreatedInviteCode] = useState<string | null>(null)
   const [joinedSquadName, setJoinedSquadName] = useState<string | null>(null)
@@ -211,50 +212,72 @@ export default function SquadsScreen() {
         </Text>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Squad Name</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Morning Movers"
-          placeholderTextColor="#687076"
-          value={form.name}
-          onChangeText={(text) => setForm((current) => ({ ...current, name: text }))}
-          editable={!isCreating}
-        />
-
-        <Text style={styles.label}>Squad Goal</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          placeholder="Running, Heart Health, Weight Loss, etc."
-          placeholderTextColor="#687076"
-          value={form.squadGoal}
-          onChangeText={(text) => setForm((current) => ({ ...current, squadGoal: text }))}
-          multiline
-          numberOfLines={4}
-          textAlignVertical="top"
-          editable={!isCreating}
-        />
-
-        <View style={styles.switchRow}>
-          <View style={styles.switchCopy}>
-            <Text style={styles.label}>Coach</Text>
-            <Text style={styles.switchDescription}>AI Coach Features</Text>
-          </View>
-          <Switch
-            value={form.coach}
-            onValueChange={(checked) => setForm((current) => ({ ...current, coach: checked }))}
-            disabled={isCreating}
-          />
-        </View>
-
+      {!showCreateForm ? (
         <Button
-          style={[styles.button, isCreating && styles.buttonDisabled]}
-          onPress={createSquad}
-          disabled={isCreating}
+          style={styles.button}
+          onPress={() => {
+            setShowCreateForm(true)
+            setShowJoinForm(false)
+          }}
         >
-          {isCreating ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create Squad</Text>}
+          <Text style={styles.buttonText}>Create a New Squad</Text>
         </Button>
-      </View>
+      ) : (
+        <View style={styles.card}>
+          <Text style={styles.label}>Squad Name</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Morning Movers"
+            placeholderTextColor="#687076"
+            value={form.name}
+            onChangeText={(text) => setForm((current) => ({ ...current, name: text }))}
+            editable={!isCreating}
+          />
+
+          <Text style={styles.label}>Squad Goal</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Running, Heart Health, Weight Loss, etc."
+            placeholderTextColor="#687076"
+            value={form.squadGoal}
+            onChangeText={(text) => setForm((current) => ({ ...current, squadGoal: text }))}
+            multiline
+            numberOfLines={4}
+            textAlignVertical="top"
+            editable={!isCreating}
+          />
+
+          <View style={styles.switchRow}>
+            <View style={styles.switchCopy}>
+              <Text style={styles.label}>Coach</Text>
+              <Text style={styles.switchDescription}>AI Coach Features</Text>
+            </View>
+            <Switch
+              value={form.coach}
+              onValueChange={(checked) => setForm((current) => ({ ...current, coach: checked }))}
+              disabled={isCreating}
+            />
+          </View>
+
+          <View style={styles.formActions}>
+            <Button
+              variant="outlined"
+              style={styles.secondaryButton}
+              onPress={() => setShowCreateForm(false)}
+              disabled={isCreating}
+            >
+              <Text style={styles.secondaryButtonText}>Cancel</Text>
+            </Button>
+            <Button
+              style={[styles.button, isCreating && styles.buttonDisabled]}
+              onPress={createSquad}
+              disabled={isCreating}
+            >
+              {isCreating ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create Squad</Text>}
+            </Button>
+          </View>
+        </View>
+      )}
 
       <Button
         variant="outlined"
@@ -431,6 +454,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   secondaryButton: {
+    flex: 1,
     borderRadius: 16,
     minHeight: 52,
     alignItems: 'center',
@@ -443,6 +467,10 @@ const styles = StyleSheet.create({
     color: '#ECEDEE',
     fontSize: 16,
     fontWeight: '700',
+  },
+  formActions: {
+    flexDirection: 'row',
+    gap: 10,
   },
   successCard: {
     backgroundColor: '#12251c',

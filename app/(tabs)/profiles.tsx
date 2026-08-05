@@ -22,9 +22,11 @@ type ProfileFormState = {
 }
 
 function calculateFitnessLevel(age: number, heightCm: number, weightKg: number, gender: string) {
-  const bmr = (weightKg)/((heightCm/100)^2)
+  void age
+  void gender
+  const bmi = weightKg / Math.pow(heightCm / 100, 2)
 
-  return Math.round(bmr)
+  return Math.round(bmi)
 }
 
 function buildProfileForm(profile: ReturnType<typeof useAuthContext>['profile']): ProfileFormState {
@@ -39,6 +41,7 @@ function buildProfileForm(profile: ReturnType<typeof useAuthContext>['profile'])
 export default function ProfilesScreen() {
   const { claims, email, isLoading, isLoggedIn, profile } = useAuthContext()
   const [isSaving, setIsSaving] = useState(false)
+  const [isEditingBodyDetails, setIsEditingBodyDetails] = useState(false)
   const [form, setForm] = useState<ProfileFormState | null>(null)
   const formState = form ?? buildProfileForm(profile)
 
@@ -53,7 +56,7 @@ export default function ProfilesScreen() {
   const saveProfile = async () => {
     if (!claims?.sub) {
       Alert.alert('Signed out', 'Please sign in again before updating your profile.')
-      return
+      return false
     }
 
     const ageValue = formState.age.trim() ? Number.parseInt(formState.age.trim(), 10) : null
@@ -63,22 +66,22 @@ export default function ProfilesScreen() {
 
     if (formState.age.trim() && Number.isNaN(ageValue)) {
       Alert.alert('Invalid age', 'Please enter a valid age in years.')
-      return
+      return false
     }
 
     if (formState.height.trim() && Number.isNaN(heightValue)) {
       Alert.alert('Invalid height', 'Please enter a valid height in centimeters.')
-      return
+      return false
     }
 
     if (formState.weight.trim() && Number.isNaN(weightValue)) {
       Alert.alert('Invalid weight', 'Please enter a valid weight in kilograms.')
-      return
+      return false
     }
 
     if (ageValue === null || heightValue === null || weightValue === null || !genderValue) {
       Alert.alert('Missing information', 'Please enter age, height, weight, and gender to calculate fitness level.')
-      return
+      return false
     }
 
     const fitnessLevel = calculateFitnessLevel(ageValue, heightValue, weightValue, genderValue)
@@ -103,10 +106,11 @@ export default function ProfilesScreen() {
 
     if (error) {
       Alert.alert('Could not save profile', error.message)
-      return
+      return false
     }
 
     Alert.alert('Profile saved', 'Your age, height, weight, gender, and fitness level were updated.')
+    return true
   }
 
   return (
@@ -143,57 +147,109 @@ export default function ProfilesScreen() {
         <View style={styles.card}>
           <Text style={styles.sectionLabel}>Body Details</Text>
 
-          <Text style={styles.label}>Age</Text>
-          <TextInput
-            style={styles.input}
-            value={formState.age}
-            onChangeText={(text) => setForm((current) => ({ ...(current ?? buildProfileForm(profile)), age: text }))}
-            placeholder="28"
-            placeholderTextColor="#687076"
-            keyboardType="number-pad"
-            editable={!isSaving}
-          />
+          <View style={styles.infoRow}>
+            <Text style={styles.infoKey}>Age</Text>
+            <Text style={styles.infoValue}>{profile?.age ?? 'Not set'}</Text>
+          </View>
 
-          <Text style={styles.label}>Height (cm)</Text>
-          <TextInput
-            style={styles.input}
-            value={formState.height}
-            onChangeText={(text) => setForm((current) => ({ ...(current ?? buildProfileForm(profile)), height: text }))}
-            placeholder="180"
-            placeholderTextColor="#687076"
-            keyboardType="number-pad"
-            editable={!isSaving}
-          />
+          <View style={styles.infoRow}>
+            <Text style={styles.infoKey}>Height</Text>
+            <Text style={styles.infoValue}>{profile?.height_cm ? `${profile.height_cm} cm` : 'Not set'}</Text>
+          </View>
 
-          <Text style={styles.label}>Weight (kg)</Text>
-          <TextInput
-            style={styles.input}
-            value={formState.weight}
-            onChangeText={(text) => setForm((current) => ({ ...(current ?? buildProfileForm(profile)), weight: text }))}
-            placeholder="75.5"
-            placeholderTextColor="#687076"
-            keyboardType="decimal-pad"
-            editable={!isSaving}
-          />
+          <View style={styles.infoRow}>
+            <Text style={styles.infoKey}>Weight</Text>
+            <Text style={styles.infoValue}>{profile?.weight_kg ? `${profile.weight_kg} kg` : 'Not set'}</Text>
+          </View>
 
-          <Text style={styles.label}>Gender</Text>
-          <TextInput
-            style={styles.input}
-            value={formState.gender}
-            onChangeText={(text) => setForm((current) => ({ ...(current ?? buildProfileForm(profile)), gender: text }))}
-            placeholder="Male, Female, Non-binary, etc."
-            placeholderTextColor="#687076"
-            autoCapitalize="words"
-            editable={!isSaving}
-          />
+          <View style={styles.infoRow}>
+            <Text style={styles.infoKey}>Gender</Text>
+            <Text style={styles.infoValue}>{profile?.gender ?? 'Not set'}</Text>
+          </View>
 
-          <Button
-            style={[styles.button, isSaving && styles.buttonDisabled]}
-            onPress={saveProfile}
-            disabled={isSaving}
-          >
-            {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save Profile</Text>}
-          </Button>
+          {!isEditingBodyDetails ? (
+            <Button
+              style={styles.button}
+              onPress={() => {
+                setForm(buildProfileForm(profile))
+                setIsEditingBodyDetails(true)
+              }}
+            >
+              <Text style={styles.buttonText}>Edit Body Details</Text>
+            </Button>
+          ) : (
+            <>
+              <Text style={styles.label}>Age</Text>
+              <TextInput
+                style={styles.input}
+                value={formState.age}
+                onChangeText={(text) => setForm((current) => ({ ...(current ?? buildProfileForm(profile)), age: text }))}
+                placeholder="28"
+                placeholderTextColor="#687076"
+                keyboardType="number-pad"
+                editable={!isSaving}
+              />
+
+              <Text style={styles.label}>Height (cm)</Text>
+              <TextInput
+                style={styles.input}
+                value={formState.height}
+                onChangeText={(text) => setForm((current) => ({ ...(current ?? buildProfileForm(profile)), height: text }))}
+                placeholder="180"
+                placeholderTextColor="#687076"
+                keyboardType="number-pad"
+                editable={!isSaving}
+              />
+
+              <Text style={styles.label}>Weight (kg)</Text>
+              <TextInput
+                style={styles.input}
+                value={formState.weight}
+                onChangeText={(text) => setForm((current) => ({ ...(current ?? buildProfileForm(profile)), weight: text }))}
+                placeholder="75.5"
+                placeholderTextColor="#687076"
+                keyboardType="decimal-pad"
+                editable={!isSaving}
+              />
+
+              <Text style={styles.label}>Gender</Text>
+              <TextInput
+                style={styles.input}
+                value={formState.gender}
+                onChangeText={(text) => setForm((current) => ({ ...(current ?? buildProfileForm(profile)), gender: text }))}
+                placeholder="Male, Female, Non-binary, etc."
+                placeholderTextColor="#687076"
+                autoCapitalize="words"
+                editable={!isSaving}
+              />
+
+              <View style={styles.actionsRow}>
+                <Button
+                  style={styles.secondaryButton}
+                  variant="outlined"
+                  onPress={() => {
+                    setForm(buildProfileForm(profile))
+                    setIsEditingBodyDetails(false)
+                  }}
+                  disabled={isSaving}
+                >
+                  <Text style={styles.secondaryButtonText}>Cancel</Text>
+                </Button>
+                <Button
+                  style={[styles.button, isSaving && styles.buttonDisabled]}
+                  onPress={async () => {
+                    const didSave = await saveProfile()
+                    if (didSave) {
+                      setIsEditingBodyDetails(false)
+                    }
+                  }}
+                  disabled={isSaving}
+                >
+                  {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save</Text>}
+                </Button>
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -306,6 +362,26 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 6,
+  },
+  secondaryButton: {
+    flex: 1,
+    borderRadius: 16,
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#2a2d35',
+    backgroundColor: '#111318',
+  },
+  secondaryButtonText: {
+    color: '#ECEDEE',
     fontSize: 16,
     fontWeight: '700',
   },
