@@ -1,7 +1,7 @@
 import { IconSymbol } from '@/components/ui/icon-symbol'
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
-import { Button, TextInput } from '@expo/ui'
+import { Button, Switch, TextInput } from '@expo/ui'
 import { Redirect, useFocusEffect, useRouter } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import {
@@ -60,6 +60,172 @@ export default function DashboardScreen() {
   const [isLoadingUserGoal, setIsLoadingUserGoal] = useState(true)
   const [isLoadingLeaders, setIsLoadingLeaders] = useState(false)
   const [isSettingsModalVisible, setIsSettingsModalVisible] = useState(false)
+
+  // Squad create/join state (moved from squads page)
+  const [isCreating, setIsCreating] = useState(false)
+  const [isJoining, setIsJoining] = useState(false)
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showJoinForm, setShowJoinForm] = useState(false)
+  const [createdInviteCode, setCreatedInviteCode] = useState<string | null>(null)
+  const [joinedSquadName, setJoinedSquadName] = useState<string | null>(null)
+  const [form, setForm] = useState<{ name: string; squadGoal: string; coach: boolean }>({
+    name: '',
+    squadGoal: '',
+    coach: false,
+  })
+  const [joinForm, setJoinForm] = useState<{ inviteCode: string }>({ inviteCode: '' })
+
+  const INVITE_CHARACTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+
+  function generateInviteCode(length = 8) {
+    let code = ''
+
+    for (let index = 0; index < length; index += 1) {
+      const randomIndex = Math.floor(Math.random() * INVITE_CHARACTERS.length)
+      code += INVITE_CHARACTERS[randomIndex]
+    }
+
+    return code
+  }
+
+  async function addOrRestoreSquadMember(userId: string, squadId: string) {
+    const now = new Date().toISOString()
+
+    const { data: existingMember, error: existingMemberError } = await supabase
+      .from('squad_members')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('squad_id', squadId)
+      .maybeSingle()
+
+    if (existingMemberError) {
+      return { error: existingMemberError.message }
+    }
+
+    if (existingMember) {
+      const { error } = await supabase
+        .from('squad_members')
+        .update({
+          is_active: true,
+          last_active: now,
+        })
+        .eq('id', existingMember.id)
+
+      if (error) {
+        return { error: error.message }
+      }
+
+      return { error: null }
+    }
+
+    const { error } = await supabase.from('squad_members').insert({
+      user_id: userId,
+      squad_id: squadId,
+      points: 0,
+      streak: 0,
+      join_date: now,
+      last_active: now,
+      is_active: true,
+    })
+
+    if (error) {
+      return { error: error.message }
+    }
+
+    return { error: null }
+  }
+
+  const createSquad = async () => {
+    if (!form.name.trim()) {
+      Alert.alert('Missing information', 'Please enter a squad name.')
+      return
+    }
+
+    if (!claims?.sub) {
+      Alert.alert('Signed out', 'Please sign in again before creating a squad.')
+      return
+    }
+
+    const invCode = generateInviteCode()
+
+    setIsCreating(true)
+    const { data, error } = await supabase
+      .from('squads')
+      .insert({
+        name: form.name.trim(),
+        squad_goal: form.squadGoal.trim() || null,
+        creator: claims.sub,
+        coach: form.coach,
+        inv_code: invCode,
+      })
+      .select('id, name, inv_code')
+      .single()
+
+    setIsCreating(false)
+
+    if (error) {
+      Alert.alert('Could not create squad', error.message)
+      return
+    }
+
+    if (data?.id) {
+      const memberResult = await addOrRestoreSquadMember(claims.sub, data.id)
+
+      if (memberResult.error) {
+        Alert.alert('Squad created, but membership failed', memberResult.error)
+        return
+      }
+    }
+
+    setCreatedInviteCode(data?.inv_code ?? invCode)
+    setJoinedSquadName(null)
+    setForm({ name: '', squadGoal: '', coach: false })
+  }
+
+  const joinSquad = async () => {
+    const inviteCode = joinForm.inviteCode.trim().toUpperCase()
+
+    if (!inviteCode) {
+      Alert.alert('Missing information', 'Please enter an invite code.')
+      return
+    }
+
+    if (!claims?.sub) {
+      Alert.alert('Signed out', 'Please sign in again before joining a squad.')
+      return
+    }
+
+    setIsJoining(true)
+    const { data: squad, error } = await supabase
+      .from('squads')
+      .select('id, name')
+      .eq('inv_code', inviteCode)
+      .maybeSingle()
+
+    if (error) {
+      setIsJoining(false)
+      Alert.alert('Could not find squad', error.message)
+      return
+    }
+
+    if (!squad) {
+      setIsJoining(false)
+      Alert.alert('Invalid code', 'No squad matches that invite code.')
+      return
+    }
+
+    const memberResult = await addOrRestoreSquadMember(claims.sub, squad.id)
+    setIsJoining(false)
+
+    if (memberResult.error) {
+      Alert.alert('Could not join squad', memberResult.error)
+      return
+    }
+
+    setJoinedSquadName(squad.name)
+    setCreatedInviteCode(null)
+    setJoinForm({ inviteCode: '' })
+  }
 
   const [isLogModalVisible, setIsLogModalVisible] = useState(false)
   const [logAmount, setLogAmount] = useState('')
@@ -491,9 +657,121 @@ export default function DashboardScreen() {
               <Text style={styles.squadText}>Open settings to update the squad mission.</Text>
             </>
           ) : (
-            <Text style={styles.squadText}>
-              Join or create a squad from the Squads tab, then use settings to manage it.
-            </Text>
+            // Render create / join controls inline when the user has no squad
+            <>
+              {!showCreateForm ? (
+                <Button
+                  style={styles.button}
+                  onPress={() => {
+                    setShowCreateForm(true)
+                    setShowJoinForm(false)
+                  }}
+                >
+                  <Text style={styles.buttonText}>Create a New Squad</Text>
+                </Button>
+              ) : (
+                <View style={styles.card}>
+                  <Text style={styles.label}>Squad Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Morning Movers"
+                    placeholderTextColor="#687076"
+                    value={form.name}
+                    onChangeText={(text) => setForm((current) => ({ ...current, name: text }))}
+                    editable={!isCreating}
+                  />
+
+                  <Text style={styles.label}>Squad Goal</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    placeholder="Running, Heart Health, Weight Loss, etc."
+                    placeholderTextColor="#687076"
+                    value={form.squadGoal}
+                    onChangeText={(text) => setForm((current) => ({ ...current, squadGoal: text }))}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    editable={!isCreating}
+                  />
+
+                  <View style={styles.switchRow}>
+                    <View style={styles.switchCopy}>
+                      <Text style={styles.label}>Coach</Text>
+                      <Text style={styles.switchDescription}>AI Coach Features</Text>
+                    </View>
+                    <Switch
+                      value={form.coach}
+                      onValueChange={(checked) => setForm((current) => ({ ...current, coach: checked }))}
+                      disabled={isCreating}
+                    />
+                  </View>
+
+                  <View style={styles.formActions}>
+                    <Button
+                      variant="outlined"
+                      style={styles.secondaryButton}
+                      onPress={() => setShowCreateForm(false)}
+                      disabled={isCreating}
+                    >
+                      <Text style={styles.secondaryButtonText}>Cancel</Text>
+                    </Button>
+                    <Button
+                      style={[styles.button, isCreating && styles.buttonDisabled]}
+                      onPress={createSquad}
+                      disabled={isCreating}
+                    >
+                      {isCreating ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create Squad</Text>}
+                    </Button>
+                  </View>
+                </View>
+              )}
+
+              <Button
+                variant="outlined"
+                style={styles.secondaryButton}
+                onPress={() => setShowJoinForm((current) => !current)}
+              >
+                <Text style={styles.secondaryButtonText}>Join an existing squad</Text>
+              </Button>
+
+              {showJoinForm ? (
+                <View style={styles.card}>
+                  <Text style={styles.label}>Invite Code</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="ABCDEFGH"
+                    placeholderTextColor="#687076"
+                    value={joinForm.inviteCode}
+                    onChangeText={(text) => setJoinForm({ inviteCode: text })}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    editable={!isJoining}
+                  />
+
+                  <Button
+                    style={[styles.button, isJoining && styles.buttonDisabled]}
+                    onPress={joinSquad}
+                    disabled={isJoining}
+                  >
+                    {isJoining ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Join Squad</Text>}
+                  </Button>
+                </View>
+              ) : null}
+
+              {createdInviteCode ? (
+                <View style={styles.successCard}>
+                  <Text style={styles.successLabel}>Squad created</Text>
+                  <Text style={styles.successText}>Invite code: {createdInviteCode}</Text>
+                </View>
+              ) : null}
+
+              {joinedSquadName ? (
+                <View style={styles.successCard}>
+                  <Text style={styles.successLabel}>Joined squad</Text>
+                  <Text style={styles.successText}>{joinedSquadName}</Text>
+                </View>
+              ) : null}
+            </>
           )}
         </View>
 

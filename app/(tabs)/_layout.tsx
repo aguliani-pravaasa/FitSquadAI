@@ -38,8 +38,9 @@ export default function TabLayout() {
       <Tabs.Screen
         name="squads"
         options={{
+          // Squads screen removed from tab bar — keep route available but hidden from tab bar
           title: 'Squads',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.3.fill" color={color} />,
+          tabBarButton: () => null,
         }}
       />
       <Tabs.Screen

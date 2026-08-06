@@ -178,6 +178,7 @@ export default function ChatScreen() {
   const [preference, setPreference] = useState<'gentle' | 'tough love' | 'full roast'>('gentle')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isSavingPreference, setIsSavingPreference] = useState(false)
+  const [showPreferences, setShowPreferences] = useState(false)
 
   useEffect(() => {
     const loadPreference = async () => {
@@ -386,56 +387,67 @@ export default function ChatScreen() {
           </Text>
         </View>
 
-        <View style={styles.preferenceContainer}>
-          <Text style={styles.preferenceLabel}>Coach Personality:</Text>
-          <View style={styles.dropdownWrapper}>
-            <Button
-              variant="outlined"
-              style={styles.dropdownHeader}
-              onPress={() => setIsDropdownOpen(!isDropdownOpen)}
-              disabled={isSavingPreference}
-            >
-              <Text style={styles.dropdownHeaderText}>
-                {preference === 'gentle' && 'Gentle Support 🤝'}
-                {preference === 'tough love' && 'Tough Love 😤'}
-                {preference === 'full roast' && 'Full Roast 🔥'}
-              </Text>
-              <Text style={styles.dropdownArrow}>{isDropdownOpen ? '▲' : '▼'}</Text>
-            </Button>
+        {/* Floating settings toggle (hideaway) */}
+        <Button
+          variant="outlined"
+          style={styles.floatingSettingsButton}
+          onPress={() => setShowPreferences((s) => !s)}
+        >
+          <Text style={styles.preferenceLabel}>{showPreferences ? 'Hide' : 'Adjust'}</Text>
+        </Button>
 
-            {isDropdownOpen && (
-              <View style={styles.dropdownList}>
-                <Button
-                  variant={preference === 'gentle' ? 'filled' : 'outlined'}
-                  style={styles.dropdownItem}
-                  onPress={() => handlePreferenceChange('gentle')}
-                >
-                  <Text style={[styles.dropdownItemText, preference === 'gentle' && styles.dropdownItemTextActive]}>
-                    Gentle Support 🤝
-                  </Text>
-                </Button>
-                <Button
-                  variant={preference === 'tough love' ? 'filled' : 'outlined'}
-                  style={styles.dropdownItem}
-                  onPress={() => handlePreferenceChange('tough love')}
-                >
-                  <Text style={[styles.dropdownItemText, preference === 'tough love' && styles.dropdownItemTextActive]}>
-                    Tough Love 😤
-                  </Text>
-                </Button>
-                <Button
-                  variant={preference === 'full roast' ? 'filled' : 'outlined'}
-                  style={styles.dropdownItem}
-                  onPress={() => handlePreferenceChange('full roast')}
-                >
-                  <Text style={[styles.dropdownItemText, preference === 'full roast' && styles.dropdownItemTextActive]}>
-                    Full Roast 🔥
-                  </Text>
-                </Button>
-              </View>
-            )}
+        {showPreferences && (
+          <View style={styles.preferenceContainer}>
+            <Text style={styles.preferenceLabel}>Coach Personality:</Text>
+            <View style={styles.dropdownWrapper}>
+              <Button
+                variant="outlined"
+                style={styles.dropdownHeader}
+                onPress={() => setIsDropdownOpen(!isDropdownOpen)}
+                disabled={isSavingPreference}
+              >
+                <Text style={styles.dropdownHeaderText}>
+                  {preference === 'gentle' && 'Gentle Support 🤝'}
+                  {preference === 'tough love' && 'Tough Love 😤'}
+                  {preference === 'full roast' && 'Full Roast 🔥'}
+                </Text>
+                <Text style={styles.dropdownArrow}>{isDropdownOpen ? '▲' : '▼'}</Text>
+              </Button>
+
+              {isDropdownOpen && (
+                <View style={styles.dropdownList}>
+                  <Button
+                    variant={preference === 'gentle' ? 'filled' : 'outlined'}
+                    style={styles.dropdownItem}
+                    onPress={() => handlePreferenceChange('gentle')}
+                  >
+                    <Text style={[styles.dropdownItemText, preference === 'gentle' && styles.dropdownItemTextActive]}>
+                      Gentle Support 🤝
+                    </Text>
+                  </Button>
+                  <Button
+                    variant={preference === 'tough love' ? 'filled' : 'outlined'}
+                    style={styles.dropdownItem}
+                    onPress={() => handlePreferenceChange('tough love')}
+                  >
+                    <Text style={[styles.dropdownItemText, preference === 'tough love' && styles.dropdownItemTextActive]}>
+                      Tough Love 😤
+                    </Text>
+                  </Button>
+                  <Button
+                    variant={preference === 'full roast' ? 'filled' : 'outlined'}
+                    style={styles.dropdownItem}
+                    onPress={() => handlePreferenceChange('full roast')}
+                  >
+                    <Text style={[styles.dropdownItemText, preference === 'full roast' && styles.dropdownItemTextActive]}>
+                      Full Roast 🔥
+                    </Text>
+                  </Button>
+                </View>
+              )}
+            </View>
           </View>
-        </View>
+        )}
 
         {!currentSquad ? (
           <View style={styles.emptyCard}>
@@ -534,8 +546,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 20,
-    gap: 16,
+    padding: 0,
+    gap: 8,
   },
   hero: {
     backgroundColor: '#1a1d23',
@@ -724,6 +736,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     zIndex: 100,
     elevation: 5,
+  },
+
+  floatingSettingsButton: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    zIndex: 300,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: '#1a1d23',
+    borderWidth: 1,
+    borderColor: '#2a2d35',
   },
   preferenceLabel: {
     color: '#9BA1A6',
