@@ -1,17 +1,18 @@
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
-import { Button, TextInput } from '@expo/ui'
+import { Button } from '@expo/ui'
 import { Redirect } from 'expo-router'
 import { useEffect, useRef, useState } from 'react'
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    KeyboardAvoidingView,
-    Platform,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native'
 
 type SenderProfile = {
@@ -522,7 +523,7 @@ export default function ChatScreen() {
               multiline
             />
             <Button
-              style={[styles.sendButton, isSending && styles.buttonDisabled]}
+              style={isSending ? { ...styles.sendButton, ...styles.buttonDisabled } : styles.sendButton}
               onPress={handleSend}
               disabled={isSending}
             >

@@ -1,18 +1,19 @@
 import { IconSymbol } from '@/components/ui/icon-symbol'
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
-import { Button, Switch, TextInput } from '@expo/ui'
+import { Button, Switch } from '@expo/ui'
 import { Redirect, useFocusEffect, useRouter } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import {
-    ActivityIndicator,
-    Alert,
-    Modal,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from 'react-native'
 
 type SquadSummary = {
@@ -716,7 +717,7 @@ export default function DashboardScreen() {
                       <Text style={styles.secondaryButtonText}>Cancel</Text>
                     </Button>
                     <Button
-                      style={[styles.button, isCreating && styles.buttonDisabled]}
+                      style={isCreating ? { ...styles.button, ...styles.buttonDisabled } : styles.button}
                       onPress={createSquad}
                       disabled={isCreating}
                     >
@@ -749,7 +750,7 @@ export default function DashboardScreen() {
                   />
 
                   <Button
-                    style={[styles.button, isJoining && styles.buttonDisabled]}
+                    style={isJoining ? { ...styles.button, ...styles.buttonDisabled } : styles.button}
                     onPress={joinSquad}
                     disabled={isJoining}
                   >
@@ -1159,6 +1160,86 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: 14,
     paddingVertical: 12,
+  },
+  button: {
+    backgroundColor: '#0a7ea4',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  label: {
+    color: '#9fb1c2',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  textArea: {
+    minHeight: 112,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  switchCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  switchDescription: {
+    color: '#a0afbf',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  formActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 4,
+  },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: '#141c28',
+    borderColor: '#304157',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    color: '#d2deea',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.65,
+  },
+  successCard: {
+    backgroundColor: '#0f1b27',
+    borderColor: '#2f4d3d',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 14,
+    gap: 4,
+  },
+  successLabel: {
+    color: '#5ec27a',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  successText: {
+    color: '#e6edf5',
+    fontSize: 14,
+    lineHeight: 20,
   },
   rowActions: {
     flexDirection: 'row',
