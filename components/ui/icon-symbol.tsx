@@ -25,6 +25,7 @@ const MAPPING = {
   'person.crop.circle.fill': 'account-circle',
   'target': 'my-location',
   'trophy.fill': 'emoji-events',
+  'square.and.pencil': 'rate-review',
 } as IconMapping;
 
 /**

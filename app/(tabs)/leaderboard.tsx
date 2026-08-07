@@ -1,6 +1,5 @@
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
-import { Column, Row, Text } from '@expo/ui'
 import { Redirect } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import {
@@ -9,6 +8,8 @@ import {
     RefreshControl,
     StyleProp,
     StyleSheet,
+    Text,
+    View,
     ViewStyle,
 } from 'react-native'
 
@@ -123,29 +124,29 @@ export default function LeaderboardScreen() {
     }
 
     return (
-      <Row style={itemStyle}>
-        <Column style={styles.rankContainer}>{rankBadge}</Column>
-        <Column style={styles.userInfo}>
+      <View style={itemStyle}>
+        <View style={styles.rankContainer}>{rankBadge}</View>
+        <View style={styles.userInfo}>
           <Text style={styles.userName} numberOfLines={1}>
             {`${name}${isCurrentUser ? ' (You)' : ''}`}
           </Text>
           {item.streak > 0 ? (
-            <Column style={styles.streakContainer}>
+            <View style={styles.streakContainer}>
               <Text style={styles.streakText}>🔥 {item.streak} day streak</Text>
-            </Column>
+            </View>
           ) : null}
-        </Column>
-        <Column style={styles.pointsContainer}>
+        </View>
+        <View style={styles.pointsContainer}>
           <Text style={[styles.pointsText, { color: pointsColor }]}>{item.points}</Text>
           <Text style={styles.pointsLabel}>PTS</Text>
-        </Column>
-      </Row>
+        </View>
+      </View>
     )
   }
 
   return (
-    <Column style={styles.container}>
-      <Column style={styles.hero}>
+    <View style={styles.container}>
+      <View style={styles.hero}>
         <Text style={styles.kicker}>Leaderboards</Text>
         {currentSquad ? (
           <>
@@ -160,32 +161,32 @@ export default function LeaderboardScreen() {
             <Text style={styles.subtitle}>Join a squad to see your leaderboard standings.</Text>
           </>
         )}
-      </Column>
+      </View>
 
       {!currentSquad ? (
-        <Column style={styles.emptyCard}>
+        <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>No Squad Found</Text>
           <Text style={styles.emptyText}>
             {"Go to the Squads tab to create or join a squad first. Once you're part of a squad, you'll see your squadmates here!"}
           </Text>
-        </Column>
+        </View>
       ) : isLoadingLeaderboard ? (
-        <Column style={styles.loadingContainer}>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#0a7ea4" />
           <Text style={styles.loadingText}>Fetching rankings...</Text>
-        </Column>
+        </View>
       ) : loadError ? (
-        <Column style={styles.errorCard}>
+        <View style={styles.errorCard}>
           <Text style={styles.errorTitle}>Could not load leaderboard</Text>
           <Text style={styles.errorText}>{loadError}</Text>
-        </Column>
+        </View>
       ) : members.length === 0 ? (
-        <Column style={styles.emptyCard}>
+        <View style={styles.emptyCard}>
           <Text style={styles.emptyTitle}>Squad is Empty</Text>
           <Text style={styles.emptyText}>
             Invite your friends to join using code: {currentSquad.inv_code}
           </Text>
-        </Column>
+        </View>
       ) : (
         <FlatList
           data={members}
@@ -202,7 +203,7 @@ export default function LeaderboardScreen() {
           }
         />
       )}
-    </Column>
+    </View>
   )
 }
 

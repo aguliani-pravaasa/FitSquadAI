@@ -21,6 +21,9 @@ type SquadSummary = {
   name: string
   inv_code: string
   squad_goal: string | null
+  coach: boolean | null
+  commitment_level: string | null
+  experience: string | null
 }
 
 type GoalSummary = {
@@ -176,11 +179,17 @@ export default function DashboardScreen() {
         Alert.alert('Squad created, but membership failed', memberResult.error)
         return
       }
-    }
 
-    setCreatedInviteCode(data?.inv_code ?? invCode)
-    setJoinedSquadName(null)
-    setForm({ name: '', squadGoal: '', coach: false })
+      setCreatedInviteCode(data?.inv_code ?? invCode)
+      setJoinedSquadName(null)
+      setForm({ name: '', squadGoal: '', coach: false })
+
+      // Navigate to onboarding page for the new squad
+      router.push({
+        pathname: '/squad-onboarding',
+        params: { squadId: data.id },
+      })
+    }
   }
 
   const joinSquad = async () => {
@@ -233,6 +242,9 @@ export default function DashboardScreen() {
   const [isSubmittingLog, setIsSubmittingLog] = useState(false)
 
   const [squadGoalDraft, setSquadGoalDraft] = useState('')
+  const [squadCoachDraft, setSquadCoachDraft] = useState(true)
+  const [squadCommitmentDraft, setSquadCommitmentDraft] = useState<'casual' | 'medium' | 'intense'>('medium')
+  const [squadExperienceDraft, setSquadExperienceDraft] = useState<'amateur' | 'intermediate' | 'pro'>('intermediate')
   const [isUpdatingSquadGoal, setIsUpdatingSquadGoal] = useState(false)
   const [isEditingSquadGoal, setIsEditingSquadGoal] = useState(false)
 
@@ -245,6 +257,9 @@ export default function DashboardScreen() {
 
   const openSettingsMenu = () => {
     setSquadGoalDraft(currentSquad?.squad_goal ?? '')
+    setSquadCoachDraft(currentSquad?.coach ?? true)
+    setSquadCommitmentDraft((currentSquad?.commitment_level as any) ?? 'medium')
+    setSquadExperienceDraft((currentSquad?.experience as any) ?? 'intermediate')
     setGoalTypeDraft(currentGoal?.type ?? '')
     setBaselinePointsDraft(currentGoal?.baseline_points?.toString() ?? '0')
     setIsEditingSquadGoal(false)
@@ -259,6 +274,9 @@ export default function DashboardScreen() {
     setIsGoalFormOpen(false)
     setIsCreatingGoal(false)
     setSquadGoalDraft(currentSquad?.squad_goal ?? '')
+    setSquadCoachDraft(currentSquad?.coach ?? true)
+    setSquadCommitmentDraft((currentSquad?.commitment_level as any) ?? 'medium')
+    setSquadExperienceDraft((currentSquad?.experience as any) ?? 'intermediate')
     setGoalTypeDraft(currentGoal?.type ?? '')
     setBaselinePointsDraft(currentGoal?.baseline_points?.toString() ?? '0')
   }
@@ -295,7 +313,7 @@ export default function DashboardScreen() {
 
       const { data: squad, error: squadError } = await supabase
         .from('squads')
-        .select('id, name, inv_code, squad_goal')
+        .select('id, name, inv_code, squad_goal, coach, commitment_level, experience')
         .eq('id', membership.squad_id)
         .single()
 
@@ -307,6 +325,9 @@ export default function DashboardScreen() {
 
       setCurrentSquad(squad)
       setSquadGoalDraft(squad.squad_goal ?? '')
+      setSquadCoachDraft(squad.coach ?? true)
+      setSquadCommitmentDraft((squad.commitment_level as any) ?? 'medium')
+      setSquadExperienceDraft((squad.experience as any) ?? 'intermediate')
       setIsLoadingSquad(false)
     }
 
@@ -418,7 +439,7 @@ export default function DashboardScreen() {
 
   const handleUpdateSquadGoal = async () => {
     if (!currentSquad?.id) {
-      Alert.alert('Missing squad', 'Join a squad before updating the squad mission.')
+      Alert.alert('Missing squad', 'Join a squad before updating squad settings.')
       return
     }
 
@@ -429,21 +450,36 @@ export default function DashboardScreen() {
 
       const { error } = await supabase
         .from('squads')
-        .update({ squad_goal: nextGoal })
+        .update({
+          squad_goal: nextGoal,
+          coach: squadCoachDraft,
+          commitment_level: squadCommitmentDraft,
+          experience: squadExperienceDraft,
+        })
         .eq('id', currentSquad.id)
 
       if (error) {
-        Alert.alert('Could not update squad mission', error.message)
+        Alert.alert('Could not update squad settings', error.message)
         return
       }
 
-      setCurrentSquad((current) => (current ? { ...current, squad_goal: nextGoal } : current))
+      setCurrentSquad((current) =>
+        current
+          ? {
+              ...current,
+              squad_goal: nextGoal,
+              coach: squadCoachDraft,
+              commitment_level: squadCommitmentDraft,
+              experience: squadExperienceDraft,
+            }
+          : current,
+      )
       setSquadGoalDraft(nextGoal ?? '')
       setIsEditingSquadGoal(false)
-      Alert.alert('Squad mission updated', 'Your squad mission has been saved.')
+      Alert.alert('Squad settings updated', 'Your squad settings have been saved.')
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Unknown error'
-      Alert.alert('Could not update squad mission', message)
+      Alert.alert('Could not update squad settings', message)
     } finally {
       setIsUpdatingSquadGoal(false)
     }
@@ -889,6 +925,19 @@ export default function DashboardScreen() {
                 <Text style={styles.settingsSectionText}>
                   {currentSquad?.squad_goal ? `Mission: ${currentSquad.squad_goal}` : 'No squad mission set yet.'}
                 </Text>
+                {currentSquad ? (
+                  <>
+                    <Text style={styles.settingsSectionText}>
+                      AI Coach: {currentSquad.coach ? 'Enabled' : 'Disabled'}
+                    </Text>
+                    <Text style={styles.settingsSectionText}>
+                      Commitment: {currentSquad.commitment_level ? currentSquad.commitment_level.toUpperCase() : 'MEDIUM'}
+                    </Text>
+                    <Text style={styles.settingsSectionText}>
+                      Experience: {currentSquad.experience ? currentSquad.experience.toUpperCase() : 'INTERMEDIATE'}
+                    </Text>
+                  </>
+                ) : null}
 
                 {currentSquad ? (
                   !isEditingSquadGoal ? (
@@ -896,16 +945,17 @@ export default function DashboardScreen() {
                       style={styles.primaryButton}
                       onPress={() => {
                         setSquadGoalDraft(currentSquad.squad_goal ?? '')
+                        setSquadCoachDraft(currentSquad.coach ?? true)
+                        setSquadCommitmentDraft((currentSquad.commitment_level as any) ?? 'medium')
+                        setSquadExperienceDraft((currentSquad.experience as any) ?? 'intermediate')
                         setIsEditingSquadGoal(true)
                       }}
                     >
-                      <Text style={styles.primaryButtonText}>
-                        {currentSquad.squad_goal ? 'Edit Squad Mission' : 'Set Squad Mission'}
-                      </Text>
+                      <Text style={styles.primaryButtonText}>Edit Squad Settings</Text>
                     </Button>
                   ) : (
                     <>
-                      <Text style={styles.settingsFieldLabel}>Squad mission</Text>
+                      <Text style={styles.settingsFieldLabel}>Squad Goal / Mission</Text>
                       <TextInput
                         style={styles.squadGoalInput}
                         value={squadGoalDraft}
@@ -915,6 +965,62 @@ export default function DashboardScreen() {
                         editable={!isUpdatingSquadGoal}
                         multiline
                       />
+
+                      <View style={styles.switchSettingRow}>
+                        <Text style={styles.settingsFieldLabel}>AI Coach</Text>
+                        <Switch
+                          value={squadCoachDraft}
+                          onValueChange={setSquadCoachDraft}
+                          disabled={isUpdatingSquadGoal}
+                        />
+                      </View>
+
+                      <Text style={styles.settingsFieldLabel}>Commitment Level</Text>
+                      <View style={styles.settingOptionGroup}>
+                        {(['casual', 'medium', 'intense'] as const).map((level) => (
+                          <Pressable
+                            key={level}
+                            style={[
+                              styles.settingOptionPill,
+                              squadCommitmentDraft === level && styles.settingOptionPillSelected,
+                            ]}
+                            onPress={() => setSquadCommitmentDraft(level)}
+                          >
+                            <Text
+                              style={[
+                                styles.settingOptionPillText,
+                                squadCommitmentDraft === level && styles.settingOptionPillTextSelected,
+                              ]}
+                            >
+                              {level.charAt(0).toUpperCase() + level.slice(1)}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </View>
+
+                      <Text style={styles.settingsFieldLabel}>Fitness Experience</Text>
+                      <View style={styles.settingOptionGroup}>
+                        {(['amateur', 'intermediate', 'pro'] as const).map((exp) => (
+                          <Pressable
+                            key={exp}
+                            style={[
+                              styles.settingOptionPill,
+                              squadExperienceDraft === exp && styles.settingOptionPillSelected,
+                            ]}
+                            onPress={() => setSquadExperienceDraft(exp)}
+                          >
+                            <Text
+                              style={[
+                                styles.settingOptionPillText,
+                                squadExperienceDraft === exp && styles.settingOptionPillTextSelected,
+                              ]}
+                            >
+                              {exp.charAt(0).toUpperCase() + exp.slice(1)}
+                            </Text>
+                          </Pressable>
+                        ))}
+                      </View>
+
                       <View style={styles.rowActions}>
                         <Button
                           style={styles.ghostButton}
@@ -931,7 +1037,7 @@ export default function DashboardScreen() {
                           {isUpdatingSquadGoal ? (
                             <ActivityIndicator color="#ffffff" />
                           ) : (
-                            <Text style={styles.primaryButtonText}>Save</Text>
+                            <Text style={styles.primaryButtonText}>Save Settings</Text>
                           )}
                         </Button>
                       </View>
@@ -1029,6 +1135,24 @@ export default function DashboardScreen() {
                     </View>
                   </>
                 )}
+              </View>
+
+              <View style={styles.settingsSection}>
+                <Text style={styles.settingsSectionLabel}>Feedback</Text>
+                <Text style={styles.settingsSectionTitle}>Send Feedback</Text>
+                <Text style={styles.settingsSectionText}>
+                  Help us improve FitSquad AI with your ideas, feature requests, or bug reports.
+                </Text>
+                <Button
+                  style={styles.ghostButton}
+                  variant="outlined"
+                  onPress={() => {
+                    closeSettingsMenu()
+                    router.push('/(tabs)/feedback')
+                  }}
+                >
+                  <Text style={styles.ghostButtonText}>Submit Feedback</Text>
+                </Button>
               </View>
             </ScrollView>
           </View>
@@ -1396,5 +1520,37 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
+  },
+  switchSettingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  settingOptionGroup: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  settingOptionPill: {
+    flex: 1,
+    backgroundColor: '#161d28',
+    borderWidth: 1,
+    borderColor: '#293547',
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  settingOptionPillSelected: {
+    backgroundColor: '#0a7ea4',
+    borderColor: '#0a7ea4',
+  },
+  settingOptionPillText: {
+    color: '#9BA1A6',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  settingOptionPillTextSelected: {
+    color: '#ffffff',
   },
 })

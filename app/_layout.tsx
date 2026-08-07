@@ -137,6 +137,7 @@ function RootNavigator() {
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      <Stack.Screen name="squad-onboarding" options={{ headerShown: false, presentation: 'card' }} />
     </Stack>
   );
 }

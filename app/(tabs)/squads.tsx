@@ -1,6 +1,7 @@
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
 import { Button, Switch, TextInput } from '@expo/ui'
+import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import {
     ActivityIndicator,
@@ -82,6 +83,7 @@ async function addOrRestoreSquadMember(userId: string, squadId: string) {
 }
 
 export default function SquadsScreen() {
+  const router = useRouter()
   const { claims, isLoading, isLoggedIn } = useAuthContext()
   const [isCreating, setIsCreating] = useState(false)
   const [isJoining, setIsJoining] = useState(false)
@@ -138,15 +140,21 @@ export default function SquadsScreen() {
         Alert.alert('Squad created, but membership failed', memberResult.error)
         return
       }
-    }
 
-    setCreatedInviteCode(data?.inv_code ?? invCode)
-    setJoinedSquadName(null)
-    setForm({
-      name: '',
-      squadGoal: '',
-      coach: false,
-    })
+      setCreatedInviteCode(data?.inv_code ?? invCode)
+      setJoinedSquadName(null)
+      setForm({
+        name: '',
+        squadGoal: '',
+        coach: false,
+      })
+
+      // Navigate to onboarding page for the new squad
+      router.push({
+        pathname: '/squad-onboarding',
+        params: { squadId: data.id },
+      })
+    }
   }
 
   const joinSquad = async () => {

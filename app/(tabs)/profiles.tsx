@@ -1,7 +1,7 @@
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
 import { Button, TextInput } from '@expo/ui'
-import { Redirect } from 'expo-router'
+import { Redirect, useRouter } from 'expo-router'
 import { useState } from 'react'
 import {
     ActivityIndicator,
@@ -39,6 +39,7 @@ function buildProfileForm(profile: ReturnType<typeof useAuthContext>['profile'])
 }
 
 export default function ProfilesScreen() {
+  const router = useRouter()
   const { claims, email, isLoading, isLoggedIn, profile } = useAuthContext()
   const [isSaving, setIsSaving] = useState(false)
   const [isEditingBodyDetails, setIsEditingBodyDetails] = useState(false)
@@ -250,6 +251,18 @@ export default function ProfilesScreen() {
               </View>
             </>
           )}
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionLabel}>App Feedback</Text>
+          <Text style={styles.infoValue}>Have suggestions or found an issue? Share your feedback with us.</Text>
+          <Button
+            style={styles.secondaryButton}
+            variant="outlined"
+            onPress={() => router.push('/(tabs)/feedback')}
+          >
+            <Text style={styles.secondaryButtonText}>Submit Feedback</Text>
+          </Button>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
