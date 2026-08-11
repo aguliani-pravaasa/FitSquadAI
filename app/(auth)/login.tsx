@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase'
-import { Button, TextInput } from '@expo/ui'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import {
@@ -7,8 +6,10 @@ import {
     Alert,
     KeyboardAvoidingView,
     Platform,
+    Pressable,
     StyleSheet,
     Text,
+    TextInput,
     View
 } from 'react-native'
 
@@ -111,7 +112,7 @@ export default function Login() {
                         />
                     </View>
 
-                    <Button
+                    <Pressable
                         style={[styles.button, loading && styles.buttonDisabled]}
                         onPress={handleAuth}
                         disabled={loading}
@@ -123,16 +124,16 @@ export default function Login() {
                                 {isLogin ? 'Sign In' : 'Sign Up'}
                             </Text>
                         )}
-                    </Button>
+                    </Pressable>
                 </View>
 
                 {/* Footer */}
-                <Button variant="text" style={styles.footerButton} onPress={() => setIslogin(!isLogin)}>
+                <Pressable style={styles.footerButton} onPress={() => setIslogin(!isLogin)}>
                     <Text style={styles.footerText}>
                         {isLogin ? "Don't have an account? " : 'Already have an account? '}
                     </Text>
                     <Text style={styles.footerLink}>{isLogin ? 'Sign Up' : 'Sign In'}</Text>
-                </Button>
+                </Pressable>
             </View>
         </KeyboardAvoidingView>
     )
