@@ -1,6 +1,5 @@
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
-import { Button } from '@expo/ui'
 import { Redirect } from 'expo-router'
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -9,6 +8,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -389,20 +389,18 @@ export default function ChatScreen() {
         </View>
 
         {/* Floating settings toggle (hideaway) */}
-        <Button
-          variant="outlined"
+        <Pressable
           style={styles.floatingSettingsButton}
           onPress={() => setShowPreferences((s) => !s)}
         >
           <Text style={styles.preferenceLabel}>{showPreferences ? 'Hide' : 'Adjust'}</Text>
-        </Button>
+        </Pressable>
 
         {showPreferences && (
           <View style={styles.preferenceContainer}>
             <Text style={styles.preferenceLabel}>Coach Personality:</Text>
             <View style={styles.dropdownWrapper}>
-              <Button
-                variant="outlined"
+              <Pressable
                 style={styles.dropdownHeader}
                 onPress={() => setIsDropdownOpen(!isDropdownOpen)}
                 disabled={isSavingPreference}
@@ -413,37 +411,34 @@ export default function ChatScreen() {
                   {preference === 'full roast' && 'Full Roast 🔥'}
                 </Text>
                 <Text style={styles.dropdownArrow}>{isDropdownOpen ? '▲' : '▼'}</Text>
-              </Button>
+              </Pressable>
 
               {isDropdownOpen && (
                 <View style={styles.dropdownList}>
-                  <Button
-                    variant={preference === 'gentle' ? 'filled' : 'outlined'}
+                  <Pressable
                     style={styles.dropdownItem}
                     onPress={() => handlePreferenceChange('gentle')}
                   >
                     <Text style={[styles.dropdownItemText, preference === 'gentle' && styles.dropdownItemTextActive]}>
                       Gentle Support 🤝
                     </Text>
-                  </Button>
-                  <Button
-                    variant={preference === 'tough love' ? 'filled' : 'outlined'}
+                  </Pressable>
+                  <Pressable
                     style={styles.dropdownItem}
                     onPress={() => handlePreferenceChange('tough love')}
                   >
                     <Text style={[styles.dropdownItemText, preference === 'tough love' && styles.dropdownItemTextActive]}>
                       Tough Love 😤
                     </Text>
-                  </Button>
-                  <Button
-                    variant={preference === 'full roast' ? 'filled' : 'outlined'}
+                  </Pressable>
+                  <Pressable
                     style={styles.dropdownItem}
                     onPress={() => handlePreferenceChange('full roast')}
                   >
                     <Text style={[styles.dropdownItemText, preference === 'full roast' && styles.dropdownItemTextActive]}>
                       Full Roast 🔥
                     </Text>
-                  </Button>
+                  </Pressable>
                 </View>
               )}
             </View>
@@ -522,8 +517,8 @@ export default function ChatScreen() {
               editable={!isSending}
               multiline
             />
-            <Button
-              style={isSending ? { ...styles.sendButton, ...styles.buttonDisabled } : styles.sendButton}
+            <Pressable
+              style={isSending ? [styles.sendButton, styles.buttonDisabled] : styles.sendButton}
               onPress={handleSend}
               disabled={isSending}
             >
@@ -532,7 +527,7 @@ export default function ChatScreen() {
               ) : (
                 <Text style={styles.sendButtonText}>Send</Text>
               )}
-            </Button>
+            </Pressable>
           </View>
         ) : null}
       </View>

@@ -1,17 +1,16 @@
-import { Button, Column, Text } from '@expo/ui';
 import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 export default function ModalScreen() {
   return (
-    <Column style={styles.container} spacing={16}>
+    <View style={styles.container}>
       <Text style={styles.title}>This is a modal</Text>
       <Link href="/(auth)/login" dismissTo asChild>
-        <Button style={styles.link}>
-          Go to login to continue
-        </Button>
+        <Pressable style={styles.link}>
+          <Text style={{ color: '#0a7ea4' }}>Go to login to continue</Text>
+        </Pressable>
       </Link>
-    </Column>
+    </View>
   );
 }
 

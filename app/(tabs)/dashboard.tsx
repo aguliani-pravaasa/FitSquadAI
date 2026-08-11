@@ -1,7 +1,6 @@
 import { IconSymbol } from '@/components/ui/icon-symbol'
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
-import { Button, Switch } from '@expo/ui'
 import { Redirect, useFocusEffect, useRouter } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import {
@@ -11,6 +10,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -697,7 +697,7 @@ export default function DashboardScreen() {
             // Render create / join controls inline when the user has no squad
             <>
               {!showCreateForm ? (
-                <Button
+                <Pressable
                   style={styles.button}
                   onPress={() => {
                     setShowCreateForm(true)
@@ -705,7 +705,7 @@ export default function DashboardScreen() {
                   }}
                 >
                   <Text style={styles.buttonText}>Create a New Squad</Text>
-                </Button>
+                </Pressable>
               ) : (
                 <View style={styles.card}>
                   <Text style={styles.label}>Squad Name</Text>
@@ -744,32 +744,30 @@ export default function DashboardScreen() {
                   </View>
 
                   <View style={styles.formActions}>
-                    <Button
-                      variant="outlined"
+                    <Pressable
                       style={styles.secondaryButton}
                       onPress={() => setShowCreateForm(false)}
                       disabled={isCreating}
                     >
                       <Text style={styles.secondaryButtonText}>Cancel</Text>
-                    </Button>
-                    <Button
-                      style={isCreating ? { ...styles.button, ...styles.buttonDisabled } : styles.button}
+                    </Pressable>
+                    <Pressable
+                      style={isCreating ? [styles.button, styles.buttonDisabled] : styles.button}
                       onPress={createSquad}
                       disabled={isCreating}
                     >
                       {isCreating ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create Squad</Text>}
-                    </Button>
+                    </Pressable>
                   </View>
                 </View>
               )}
 
-              <Button
-                variant="outlined"
+              <Pressable
                 style={styles.secondaryButton}
                 onPress={() => setShowJoinForm((current) => !current)}
               >
                 <Text style={styles.secondaryButtonText}>Join an existing squad</Text>
-              </Button>
+              </Pressable>
 
               {showJoinForm ? (
                 <View style={styles.card}>
@@ -785,13 +783,13 @@ export default function DashboardScreen() {
                     editable={!isJoining}
                   />
 
-                  <Button
-                    style={isJoining ? { ...styles.button, ...styles.buttonDisabled } : styles.button}
+                  <Pressable
+                    style={isJoining ? [styles.button, styles.buttonDisabled] : styles.button}
                     onPress={joinSquad}
                     disabled={isJoining}
                   >
                     {isJoining ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Join Squad</Text>}
-                  </Button>
+                  </Pressable>
                 </View>
               ) : null}
 
@@ -836,9 +834,9 @@ export default function DashboardScreen() {
             <>
               <Text style={styles.goalType}>{userGoal.text}</Text>
               <Text style={styles.squadText}>Baseline points: {userGoal.user_baseline_points ?? 0}</Text>
-              <Button style={styles.primaryButton} onPress={handleLogData}>
+              <Pressable style={styles.primaryButton} onPress={handleLogData}>
                 <Text style={styles.primaryButtonText}>Log Completion</Text>
-              </Button>
+              </Pressable>
             </>
           ) : (
             <Text style={styles.squadText}>Accept the active squad goal to begin logging progress.</Text>
@@ -885,16 +883,16 @@ export default function DashboardScreen() {
               autoFocus
             />
             <View style={styles.rowActions}>
-              <Button style={styles.ghostButton} variant="outlined" onPress={closeLogModal} disabled={isSubmittingLog}>
+              <Pressable style={styles.ghostButton} onPress={closeLogModal} disabled={isSubmittingLog}>
                 <Text style={styles.ghostButtonText}>Cancel</Text>
-              </Button>
-              <Button
+              </Pressable>
+              <Pressable
                 style={styles.primaryButton}
                 onPress={handleSubmitLog}
                 disabled={isSubmittingLog}
               >
                 {isSubmittingLog ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.primaryButtonText}>Submit</Text>}
-              </Button>
+              </Pressable>
             </View>
           </View>
         </View>
@@ -908,9 +906,9 @@ export default function DashboardScreen() {
                 <Text style={styles.modalTitle}>Settings</Text>
                 <Text style={styles.modalSubtitle}>Edit squad, users, and goals from one place.</Text>
               </View>
-              <Button style={styles.closeButton} variant="outlined" onPress={closeSettingsMenu}>
+              <Pressable style={styles.closeButton} onPress={closeSettingsMenu}>
                 <Text style={styles.ghostButtonText}>Close</Text>
-              </Button>
+              </Pressable>
             </View>
 
             <ScrollView contentContainerStyle={styles.settingsContent} showsVerticalScrollIndicator={false}>
@@ -941,7 +939,7 @@ export default function DashboardScreen() {
 
                 {currentSquad ? (
                   !isEditingSquadGoal ? (
-                    <Button
+                    <Pressable
                       style={styles.primaryButton}
                       onPress={() => {
                         setSquadGoalDraft(currentSquad.squad_goal ?? '')
@@ -952,7 +950,7 @@ export default function DashboardScreen() {
                       }}
                     >
                       <Text style={styles.primaryButtonText}>Edit Squad Settings</Text>
-                    </Button>
+                    </Pressable>
                   ) : (
                     <>
                       <Text style={styles.settingsFieldLabel}>Squad Goal / Mission</Text>
@@ -1022,9 +1020,8 @@ export default function DashboardScreen() {
                       </View>
 
                       <View style={styles.rowActions}>
-                        <Button
+                        <Pressable
                           style={styles.ghostButton}
-                          variant="outlined"
                           onPress={() => {
                             setIsEditingSquadGoal(false)
                             setSquadGoalDraft(currentSquad?.squad_goal ?? '')
@@ -1032,14 +1029,14 @@ export default function DashboardScreen() {
                           disabled={isUpdatingSquadGoal}
                         >
                           <Text style={styles.ghostButtonText}>Cancel</Text>
-                        </Button>
-                        <Button style={styles.primaryButton} onPress={handleUpdateSquadGoal} disabled={isUpdatingSquadGoal}>
+                        </Pressable>
+                        <Pressable style={styles.primaryButton} onPress={handleUpdateSquadGoal} disabled={isUpdatingSquadGoal}>
                           {isUpdatingSquadGoal ? (
                             <ActivityIndicator color="#ffffff" />
                           ) : (
                             <Text style={styles.primaryButtonText}>Save Settings</Text>
                           )}
-                        </Button>
+                        </Pressable>
                       </View>
                     </>
                   )
@@ -1052,9 +1049,9 @@ export default function DashboardScreen() {
                 <Text style={styles.settingsSectionText}>{email ?? 'Email unavailable'}</Text>
                 <Text style={styles.settingsSectionText}>Username: {profile?.username ?? 'Not set'}</Text>
                 <Text style={styles.settingsSectionText}>Body details live in your profile screen.</Text>
-                <Button style={styles.ghostButton} variant="outlined" onPress={openProfileEditor}>
+                <Pressable style={styles.ghostButton} onPress={openProfileEditor}>
                   <Text style={styles.ghostButtonText}>Edit Body Details</Text>
-                </Button>
+                </Pressable>
               </View>
 
               <View style={styles.settingsSection}>
@@ -1066,7 +1063,7 @@ export default function DashboardScreen() {
 
                 {!isGoalFormOpen ? (
                   <View style={styles.rowActions}>
-                    <Button
+                    <Pressable
                       style={styles.primaryButton}
                       onPress={() => {
                         setGoalTypeDraft(currentGoal?.type ?? '')
@@ -1076,15 +1073,15 @@ export default function DashboardScreen() {
                       }}
                     >
                       <Text style={styles.primaryButtonText}>{currentGoal ? 'Edit Goal' : 'Create Goal'}</Text>
-                    </Button>
+                    </Pressable>
                     {currentGoal && !userGoal ? (
-                      <Button style={styles.ghostButton} variant="outlined" onPress={handleAcceptGoal} disabled={isAcceptingGoal}>
+                      <Pressable style={styles.ghostButton} onPress={handleAcceptGoal} disabled={isAcceptingGoal}>
                         {isAcceptingGoal ? (
                           <ActivityIndicator color="#ffffff" />
                         ) : (
                           <Text style={styles.ghostButtonText}>Accept Goal</Text>
                         )}
-                      </Button>
+                      </Pressable>
                     ) : null}
                   </View>
                 ) : (
@@ -1112,9 +1109,8 @@ export default function DashboardScreen() {
                     />
 
                     <View style={styles.rowActions}>
-                      <Button
+                      <Pressable
                         style={styles.ghostButton}
-                        variant="outlined"
                         onPress={() => {
                           setIsGoalFormOpen(false)
                           setIsCreatingGoal(false)
@@ -1124,14 +1120,14 @@ export default function DashboardScreen() {
                         disabled={isSavingGoal}
                       >
                         <Text style={styles.ghostButtonText}>Cancel</Text>
-                      </Button>
-                      <Button style={styles.primaryButton} onPress={handleSaveSquadGoal} disabled={isSavingGoal}>
+                      </Pressable>
+                      <Pressable style={styles.primaryButton} onPress={handleSaveSquadGoal} disabled={isSavingGoal}>
                         {isSavingGoal ? (
                           <ActivityIndicator color="#ffffff" />
                         ) : (
                           <Text style={styles.primaryButtonText}>{isCreatingGoal ? 'Create' : 'Save'}</Text>
                         )}
-                      </Button>
+                      </Pressable>
                     </View>
                   </>
                 )}
@@ -1143,16 +1139,15 @@ export default function DashboardScreen() {
                 <Text style={styles.settingsSectionText}>
                   Help us improve FitSquad AI with your ideas, feature requests, or bug reports.
                 </Text>
-                <Button
+                <Pressable
                   style={styles.ghostButton}
-                  variant="outlined"
                   onPress={() => {
                     closeSettingsMenu()
                     router.push('/(tabs)/feedback')
                   }}
                 >
                   <Text style={styles.ghostButtonText}>Submit Feedback</Text>
-                </Button>
+                </Pressable>
               </View>
             </ScrollView>
           </View>

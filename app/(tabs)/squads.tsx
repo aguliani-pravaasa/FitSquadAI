@@ -1,14 +1,16 @@
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
-import { Button, Switch, TextInput } from '@expo/ui'
 import { useRouter } from 'expo-router'
 import { useState } from 'react'
 import {
     ActivityIndicator,
     Alert,
+    Pressable,
     ScrollView,
     StyleSheet,
+    Switch,
     Text,
+    TextInput,
     View,
 } from 'react-native'
 
@@ -221,7 +223,7 @@ export default function SquadsScreen() {
       </View>
 
       {!showCreateForm ? (
-        <Button
+        <Pressable
           style={styles.button}
           onPress={() => {
             setShowCreateForm(true)
@@ -229,7 +231,7 @@ export default function SquadsScreen() {
           }}
         >
           <Text style={styles.buttonText}>Create a New Squad</Text>
-        </Button>
+        </Pressable>
       ) : (
         <View style={styles.card}>
           <Text style={styles.label}>Squad Name</Text>
@@ -268,32 +270,30 @@ export default function SquadsScreen() {
           </View>
 
           <View style={styles.formActions}>
-            <Button
-              variant="outlined"
+            <Pressable
               style={styles.secondaryButton}
               onPress={() => setShowCreateForm(false)}
               disabled={isCreating}
             >
               <Text style={styles.secondaryButtonText}>Cancel</Text>
-            </Button>
-            <Button
+            </Pressable>
+            <Pressable
               style={[styles.button, isCreating && styles.buttonDisabled]}
               onPress={createSquad}
               disabled={isCreating}
             >
               {isCreating ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create Squad</Text>}
-            </Button>
+            </Pressable>
           </View>
         </View>
       )}
 
-      <Button
-        variant="outlined"
+      <Pressable
         style={styles.secondaryButton}
         onPress={() => setShowJoinForm((current) => !current)}
       >
         <Text style={styles.secondaryButtonText}>Join an existing squad</Text>
-      </Button>
+      </Pressable>
 
       {showJoinForm ? (
         <View style={styles.card}>
@@ -309,13 +309,13 @@ export default function SquadsScreen() {
             editable={!isJoining}
           />
 
-          <Button
+          <Pressable
             style={[styles.button, isJoining && styles.buttonDisabled]}
             onPress={joinSquad}
             disabled={isJoining}
           >
             {isJoining ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Join Squad</Text>}
-          </Button>
+          </Pressable>
         </View>
       ) : null}
 

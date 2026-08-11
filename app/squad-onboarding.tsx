@@ -1,7 +1,6 @@
 import { IconSymbol } from '@/components/ui/icon-symbol'
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
-import { Button, Switch } from '@expo/ui'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import {
@@ -10,6 +9,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -414,20 +414,19 @@ export default function SquadOnboardingScreen() {
       {/* Footer Nav Controls */}
       <View style={styles.footer}>
         {step > 1 ? (
-          <Button
-            variant="outlined"
+          <Pressable
             style={styles.backButton}
             onPress={handleBack}
             disabled={isSaving}
           >
             <Text style={styles.backButtonText}>Back</Text>
-          </Button>
+          </Pressable>
         ) : (
           <View style={{ flex: 1 }} />
         )}
 
-        <Button
-          style={isSaving ? { ...styles.nextButton, ...styles.disabledButton } : styles.nextButton}
+        <Pressable
+          style={isSaving ? [styles.nextButton, styles.disabledButton] : styles.nextButton}
           onPress={handleNext}
           disabled={isSaving}
         >
@@ -438,7 +437,7 @@ export default function SquadOnboardingScreen() {
               {step === 4 ? 'Complete Onboarding' : 'Next Step'}
             </Text>
           )}
-        </Button>
+        </Pressable>
       </View>
     </View>
   )

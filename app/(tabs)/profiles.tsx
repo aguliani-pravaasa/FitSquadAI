@@ -1,6 +1,5 @@
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { supabase } from '@/lib/supabase'
-import { Button, TextInput } from '@expo/ui'
 import { Redirect, useRouter } from 'expo-router'
 import { useState } from 'react'
 import {
@@ -8,9 +7,11 @@ import {
     Alert,
     KeyboardAvoidingView,
     Platform,
+    Pressable,
     ScrollView,
     StyleSheet,
     Text,
+    TextInput,
     View,
 } from 'react-native'
 
@@ -169,7 +170,7 @@ export default function ProfilesScreen() {
           </View>
 
           {!isEditingBodyDetails ? (
-            <Button
+            <Pressable
               style={styles.button}
               onPress={() => {
                 setForm(buildProfileForm(profile))
@@ -177,7 +178,7 @@ export default function ProfilesScreen() {
               }}
             >
               <Text style={styles.buttonText}>Edit Body Details</Text>
-            </Button>
+            </Pressable>
           ) : (
             <>
               <Text style={styles.label}>Age</Text>
@@ -225,9 +226,8 @@ export default function ProfilesScreen() {
               />
 
               <View style={styles.actionsRow}>
-                <Button
+                <Pressable
                   style={styles.secondaryButton}
-                  variant="outlined"
                   onPress={() => {
                     setForm(buildProfileForm(profile))
                     setIsEditingBodyDetails(false)
@@ -235,8 +235,8 @@ export default function ProfilesScreen() {
                   disabled={isSaving}
                 >
                   <Text style={styles.secondaryButtonText}>Cancel</Text>
-                </Button>
-                <Button
+                </Pressable>
+                <Pressable
                   style={[styles.button, isSaving && styles.buttonDisabled]}
                   onPress={async () => {
                     const didSave = await saveProfile()
@@ -247,7 +247,7 @@ export default function ProfilesScreen() {
                   disabled={isSaving}
                 >
                   {isSaving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Save</Text>}
-                </Button>
+                </Pressable>
               </View>
             </>
           )}
@@ -256,13 +256,12 @@ export default function ProfilesScreen() {
         <View style={styles.card}>
           <Text style={styles.sectionLabel}>App Feedback</Text>
           <Text style={styles.infoValue}>Have suggestions or found an issue? Share your feedback with us.</Text>
-          <Button
+          <Pressable
             style={styles.secondaryButton}
-            variant="outlined"
             onPress={() => router.push('/(tabs)/feedback')}
           >
             <Text style={styles.secondaryButtonText}>Submit Feedback</Text>
-          </Button>
+          </Pressable>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
